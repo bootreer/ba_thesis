@@ -1,0 +1,15 @@
+\chapter{Related works}
+Writing drivers in user-space isn't a ground-breaking concept. As such, we will go into detail on some other notable examples for user space NVMe drivers.
+
+\section{SPDK}
+SPDK provides a large set of tools libraries for high-performance storage applications, at the center of which is its NVMe driver. The driver itself is poll-based and runs in user space.
+
+Although the public API is quite manageable, having a look at the source code reveals a very complex driver written in C.
+
+\section{Redox}
+Redox is a Unix-like operating system written entirely in Rust, with the goal of being a ``robust, reliable and safe general-purpose operating system''. Its development began in 2015 by Jeremy Soller and is still being actively worked on at the time of writing.
+
+As Redox is based on a microkernel architecture, all operating system functionalities, such as drivers, run in user-space. Currently, Redox's NVMe driver employs an interrupt-driven architecture, and supports asynchronous I/O to the NVMe device.
+
+\section{Redleaf}
+Like Redox, Redleaf is also a microkernel operating system written in Rust. Developed by the University of Utah's Mars Research Group in 2020, Redleaf's NVMe user space driver shares a similar structure to Redox's driver, and claim an I/O throughput within 1\% of the what SPDK achieves.
