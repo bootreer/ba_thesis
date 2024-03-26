@@ -1,1 +1,13 @@
 \chapter{Implementation}
+\section{Direct Memory Access}
+To enable the transfer of data between the host system and NVMe device we make use of direct memory access (DMA). We initialise DMA memory for all Submission and Completion Queues, as well as buffers where the device can read from and write to. As the NVMe device operates independently of the CPU accesssing memory via physical addresses, we require the DMA buffers stays in main memory. We can use $\texttt{mlock(2)}$ to guarantee a memory page is in main memory, however the mapping is not static for 4 KiB pages, the standard page size on Linux. Instead, we make use of 2 MiB huge pages for this, where the physical addresses are pinned, due to Linux not implementing page migration on 2 MiB huge pages\cite{user_space_net}.
+
+Initialising huge pages on the operating system is done with the shell script $\texttt{setup-hugetlbfs.sh}$ which creates a mount point for huge pages and writes a number of huge pages to a $\texttt{sysfs}$ file. Now we can allocate memory by creating the file in the newly mounted directory and memory map the file with $\texttt{mmap(2)}$ by using the appropriate binding in the $\texttt{libc}$ crate. We then can derive the physical memory address of the page through $\texttt{/proc/self/pagemap}$.
+
+\section{Driver initialisation}
+% TODO:
+% - mmio through the BAR of the device
+% - reset nvme controller -> wait
+% - set BAR stuff to the correct shit -> which command set, admin cq/sq, etc.
+% -
+\section{I/O submissions and completion}

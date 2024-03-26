@@ -13,5 +13,5 @@ latexmk:
 	latexmk -interaction=nonstopmode -outdir=$(OUT) -pdf -halt-on-error $(FILE) && mv build/thesis.pdf thesis.pdf
 
 clean:
-	rm -rf thesis.pdf
+	rm -rf thesis.pdf && rm -rf build
 

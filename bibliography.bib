@@ -1,0 +1,94 @@
+% TODO Fix citations and make them look nice
+@article{haas_nvme,
+  author          = {Haas, Gabriel and Leis, Viktor},
+  title           = {What Modern NVMe Storage Can Do, and How to Exploit it:
+                  High-Performance I/O for High-Performance Storage Engines},
+  year            = 2023,
+  issue_date      = {May 2023},
+  publisher       = {VLDB Endowment},
+  volume          = 16,
+  number          = 9,
+  issn            = {2150-8097},
+  url             = {\url{https://doi.org/10.14778/3598581.3598584}},
+  doi             = {10.14778/3598581.3598584},
+  abstract        = {NVMe SSDs based on flash are cheap and offer high
+                  throughput. Combining several of these devices into a single
+                  server enables 10 million I/O operations per second or more.
+                  Our experiments show that existing out-of-memory database
+                  systems and storage engines achieve only a fraction of this
+                  performance. In this work, we demonstrate that it is possible
+                  to close the performance gap between hardware and software
+                  through an I/O optimized storage engine design. In a heavy
+                  out-of-memory setting, where the dataset is 10 times larger
+                  than main memory, our system can achieve more than 1 million
+                  TPC-C transactions per second.},
+  journal         = {Proc. VLDB Endow.},
+  month           = {May},
+  pages           = {2090–2102},
+  numpages        = 13
+}
+
+@inproceedings{storage_api,
+  author          = {Didona, Diego and Pfefferle, Jonas and Ioannou, Nikolas and
+                  Metzler, Bernard and Trivedi, Animesh},
+  title           = {Understanding modern storage APIs: a systematic study of
+                  libaio, SPDK, and io\_uring},
+  year            = 2022,
+  isbn            = 9781450393805,
+  publisher       = {Association for Computing Machinery},
+  address         = {New York, NY, USA},
+  url             = {\url{https://doi.org/10.1145/3534056.3534945}},
+  doi             = {10.1145/3534056.3534945},
+  abstract        = {Recent high-performance storage devices have exposed
+                  software inefficiencies in existing storage stacks, leading to
+                  a new breed of I/O stacks. The newest storage API of the Linux
+                  kernel is io_uring. We perform one of the first in-depth
+                  studies of io_uring, and compare its performance and
+                  dis-/advantages with the established libaio and SPDK APIs. Our
+                  key findings reveal that (i) polling design significantly
+                  impacts performance; (ii) with enough CPU cores io_uring can
+                  deliver performance close to that of SPDK; and (iii)
+                  performance scalability over multiple CPU cores and devices
+                  requires careful consideration and necessitates a hybrid
+                  approach. Last, we provide design guidelines for developers of
+                  storage intensive applications.},
+  booktitle       = {Proceedings of the 15th ACM International Conference on
+                  Systems and Storage},
+  pages           = {120–-127},
+  numpages        = 8,
+  location        = {Haifa, Israel},
+  series          = {SYSTOR '22}
+}
+
+@inproceedings {redleaf,
+  author          = {Vikram Narayanan and Tianjiao Huang and David Detweiler and
+                  Dan Appel and Zhaofeng Li and Gerd Zellweger and Anton
+                  Burtsev},
+  title           = {{RedLeaf}: Isolation and Communication in a Safe Operating
+                  System},
+  booktitle       = {14th USENIX Symposium on Operating Systems Design and
+                  Implementation (OSDI 20)},
+  year            = 2020,
+  isbn            = {978-1-939133-19-9},
+  pages           = {21--39},
+  url             = {https://www.usenix.org/conference/osdi20/presentation/narayanan-vikram},
+  publisher       = {USENIX Association},
+  month           = nov
+}
+
+@inproceedings{user_space_net,
+author = {Emmerich, Paul and Pudelko, Maximilian and Bauer, Simon and Carle, Georg},
+title = {User Space Network Drivers},
+year = {2018},
+isbn = {9781450355858},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3232755.3232767},
+doi = {10.1145/3232755.3232767},
+abstract = {The rise of user space packet processing frameworks like DPDK and netmap makes low-level code more accessible to developers and researchers. Previously, driver code was hidden in the kernel and rarely modified-or even looked at-by developers working at higher layers. These barriers are gone nowadays, yet developers still treat user space drivers as black-boxes magically accelerating applications. We want to change this: every researcher building network applications should understand the intricacies of the underlying drivers, especially if they impact performance. We present ixy, a user space network driver designed for simplicity and educational purposes. Ixy focuses on the bare essentials of user space packet processing: a packet forwarder including the whole NIC driver uses less than 1000 lines of C code.Our code is available as free and open source under the BSD license at https://github.com/emmericp/ixy.},
+booktitle = {Proceedings of the Applied Networking Research Workshop},
+pages = {91–93},
+numpages = {3},
+location = {Montreal, QC, Canada},
+series = {ANRW '18}
+}
