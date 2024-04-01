@@ -1,13 +1,53 @@
-\chapter{Implementation}
-\section{Direct Memory Access}
-To enable the transfer of data between the host system and NVMe device we make use of direct memory access (DMA). We initialise DMA memory for all Submission and Completion Queues, as well as buffers where the device can read from and write to. As the NVMe device operates independently of the CPU accesssing memory via physical addresses, we require the DMA buffers stays in main memory. We can use $\texttt{mlock(2)}$ to guarantee a memory page is in main memory, however the mapping is not static for 4 KiB pages, the standard page size on Linux. Instead, we make use of 2 MiB huge pages for this, where the physical addresses are pinned, due to Linux not implementing page migration on 2 MiB huge pages\cite{user_space_net}.
+\chapter{Implementation}\label{chapter:implementation}
+\section{Memory-Mapped I/O}\label{section:MMIO}
+Memory-mapped I/O (MMIO) is a method of performing I/O operations between the CPU and peripheral devices with a computer. To reset and configure a NVMe drive, as well as submit new requests, we need to access its Base Address Registers (BARs); on PCIe devices, these registers are accessed through MMIO. The subsystem \texttt{uio} in Linux exposes the BARs, as well as other required interfaces in the pseudo-filesystem \texttt{sysfs}. We map the BARs into main memory as shared memory, so that changes the mapped memory are also written back to the file and vice-versa.
 
-Initialising huge pages on the operating system is done with the shell script $\texttt{setup-hugetlbfs.sh}$ which creates a mount point for huge pages and writes a number of huge pages to a $\texttt{sysfs}$ file. Now we can allocate memory by creating the file in the newly mounted directory and memory map the file with $\texttt{mmap(2)}$ by using the appropriate binding in the $\texttt{libc}$ crate. We then can derive the physical memory address of the page through $\texttt{/proc/self/pagemap}$.
+In our code, mapping the BARs to main memory is done by the function \texttt{pci\_map\_resource()} (\ref{lst:mmap}) in \texttt{pci.rs}. Here, we open the \texttt{resource0} file with read and write access and pass the file descriptor and its length to \texttt{libc::map}. As \texttt{libc::mmap} directly calls \texttt{mmap(2)}, the function call is wrapped in an \texttt{unsafe} block. If the function returns a null pointer or the length of the file is 0, we return an error, otherwise the pointer and the length of the file are returned as a pair.
+
+\begin{lstlisting}[language=Rust,label=lst:mmap,caption=Memory mapping a PCI resource in Rust]
+pub fn pci_map_resource(pci_addr: &str) -> Result<(*mut u8, usize), Error> {
+    let path = format!("sys/bus/pci/devices/{}/resource0", pci_addr);
+
+    let file = fs::OpenOptions::new().read(true).write(true).open(&path)?;
+    let len = fs::metadata(&path)?.len() as usize;
+
+    let ptr = unsafe {
+        libc::mmap(
+            ptr::null_mut(),
+            len,
+            libc::PROT_READ | libc::PROT_WRITE,
+            libc::MAP_SHARED,
+            file.as_raw_fd(),
+            0,
+        ) as *mut u8
+    };
+
+    if ptr.is_null() || len == 0 {
+        Err("pci mapping failed".into())
+    } else {
+        Ok((ptr, len))
+    }
+}
+\end{lstlisting}
+
+\section{Direct Memory Access}
+To enable the transfer of data between the host system and NVMe device we make use of direct memory access (DMA). We initialise DMA memory for all Submission and Completion Queues, as well as buffers where the device can read from and write to. As the NVMe device operates independently of the CPU accesssing memory via physical addresses, we require the DMA buffers stays in main memory. We can use \texttt{mlock(2)} to guarantee a memory page is in main memory, however the mapping is not static for 4 KiB pages, the standard page size on Linux. Instead, we make use of 2 MiB huge pages for this, where the physical addresses are pinned, due to Linux not implementing page migration on 2 MiB huge pages\cite{user_space_net}.
+
+Enabling the usage of huge pages on the operating system is done with the shell script \texttt{setup-hugetlbfs.sh} which creates a mount point for huge pages and writes a number of huge pages to a \texttt{sysfs} file. Now we can allocate memory by creating the file in the newly mounted directory and memory map the file with \texttt{mmap(2)} by using the appropriate binding in the \texttt{libc} crate. We then can derive the physical memory address of the page through \texttt{/proc/self/pagemap}.
+
+In \texttt{memory.rs} we define the struct \texttt{Dma<T>} and the function \texttt{allocate()}, which allocates a huge page and maps it to memory, and returns a struct encapsulating a virtual address to the object of type \texttt{T} and the physical address. We also define the trait \texttt{DmaSlice} with the functions \texttt{chunks} and \texttt{slice}, how these functions are relevant will be described in \autoref{subsection:io}.
+
+% \section{Architecture}
+% The struct \texttt{NvmeDevice} is able to run as the driver itself, handling admin and I/O commands and also polling their completions.
 
 \section{Driver initialisation}
-% TODO:
-% - mmio through the BAR of the device
-% - reset nvme controller -> wait
-% - set BAR stuff to the correct shit -> which command set, admin cq/sq, etc.
-% -
-\section{I/O submissions and completion}
+In this section, we will go over the initialisation process of the driver, looking what happens within the function \texttt{init()} in \texttt{lib.rs} and the functions/methods it calls; \texttt{init()} returns an instance of \texttt{NvmeDevice}, if nothing goes wrong. The struct is the driver for a single NVMe drive, and can handle admin and I/O requests.
+
+Before any configuration and initialisation is done, we check if the PCI device has the class id \texttt{0x0108}: \texttt{0x01} for mass storage device, \texttt{0x08} the NVMe subclass.
+We then unbind the kernel driver from the NVMe device by writing the PCI address of the device to the \texttt{unbind} file in \texttt{sysfs}. This is then followed by enabling the bus master and disabling interrupts by setting the appropriate bits in the PCI command register, thus enabling DMA and disabling interrupts entirely, as our driver is poll-based. At this point, we also initialise all the relevant structs required for the driver e.g., admin and I/O queues.
+
+The BARs of the NVMe device is then mapped into main memory, as described in \autoref{section:MMIO}. We then follow the initialisation procedure described in the NVMe specification: first, we disable the controller by setting the \texttt{EN} (enable) bit to 0 in the \texttt{CC} (Controller Configuration) register. We wait for the \texttt{ready} bit in the \texttt{CSTS} register to be set to 0, after which we can configure the controller. Then, we set the \texttt{ASQ} (Admin Submission Queue), \texttt{ACQ} (Admin Completion Queue) and the \texttt{AQA} (Admin Queue Attributes) to the physical addresses of the queues and the queue length, respectively. This is followed by setting the submission and completion entry sizes in \texttt{CC}. The controller is then enabled by setting the \texttt{EN} bit to 1, and we wait for the \texttt{CSTS} register to be set to 1. Now the NVMe controller is ready to process admin submissions. The relevant offsets for the registers are stored in the enum \texttt{NvmeRegs32} and \texttt{NvmeRegs64}.
+
+After this, we request an I/O completion queue, followed by a request for an I/O submission queue. Then we identify the namespaces, which get stored in a \texttt{HashMap} in the \texttt{NvmeDevice}.
+
+\section{I/O operations}\label{subsection:io}

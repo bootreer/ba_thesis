@@ -5,4 +5,6 @@ With this in mind, why write our own driver when SPDK exists? The SPDK codebase 
 
 This thesis posits that it is feasible to develop a driver that achieves comparable performance to SPDK, with a simpled API and less code, while leveraging a memory-safe programming language. Thus we want to offer a platofrm which simplifies the exploration of NVMe storage performance, such topics like write amplication, as well as write a driver where unsafe code is kept to a minimum. To this end, this thesis will explore the development and evaluation of a user-space storage driver written in Rust, a language that promises memory safety guarantees without any performance downfalls.
 
-(TODO: I/O stack history?)
+In \autoref{chapter:basics} we will go over all the background information relevant to the thesis, having a look at NVMe, device drivers in Linux and the Rust programming language. Then, we will shortly elaborate on some other relevant NVMe driver implementations in \autoref{chapter:related}.
+We present the implementation in \autoref{chapter:implementation}. We go over how the driver is initialised and bound to the NVMe device, after which we show how I/O operations are handled.
+Finally, we analyse the performance of the driver itself in \autoref{chapter:eval}, looking at its throughput and latency, while also comparing it to the other SPDK and the aforementioned Linux I/O APIs.
