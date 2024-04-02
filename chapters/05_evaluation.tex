@@ -15,11 +15,29 @@ All benchmarks are run on a system with an Intel Xeon E5-2660 with 251GiB of RAM
         \multirow{2}{*}{Queue Depth 32, Thread 4} & Random read & 600K IOPS \\ \cline{2-3}
                                                     & Random write & 550K IOPS \\ \cline{1-3}
     \end{tabular}
-    \caption{Samsung Evo 970 Plus performance limits as written in the datasheet}
+    \caption{Samsung Evo 970 Plus performance limits as per the datasheet}
     \label{tab:evoplus}
 \end{table}
 
-In the following sections we will compare our driver's performance with the datasheet numbers in \autoref{tab:evoplus}, as well as against other I/O engines: \texttt{libaio}, \texttt{io\_uring}, \texttt{SPDK} and the Linux file I/O API \texttt{pread}/\texttt{pwrite} (\texttt{psync}). Each I/O engine is tested by running a read or write workload over 900 seconds, with I/O unit sizes of 4KiB. All write benchmarks are done on an empty drive.
+In the following sections we will compare our driver's performance with the datasheet numbers in \autoref{tab:evoplus}, as well as against other storage engines: \texttt{libaio}, \texttt{io\_uring}, SPDK and the Linux file I/O API \texttt{pread}/\texttt{pwrite} (\texttt{psync}). Each I/O engine is tested by running a read or write workload over 900 seconds, with I/O unit sizes of 4KiB. These are tested using \texttt{fio}\footnote{\url{https://github.com/axboe/fio}} with the configuration in \autoref{lst:fio_conf}.
+
+\begin{lstlisting}[float, label=lst:fio_conf, caption=\texttt{fio} configuration]
+  [global]
+  io_engine={spdk,io_uring,libaio,psync}
+  rw={randread,randwrite,read,write}
+  blocksize=4k
+  direct=1
+  norandommap=1
+  runtime=900
+
+  numjobs={1,4}
+  queue_depth={1,32}
+  group_reporting=1
+\end{lstlisting}
+
+The NVMe controller is aware when a device is empty and thus can perform read requests without actually performing a read operation. On an empty drive, the reported ``read'' performance will be much higher than the manufacturer's claims, hence all read tests are done on a full drive, i.e. each logical block address (LBA) has been written to at least once.
+
+For writes, the SSD is cleared beforehand, such that it is in a comparable state for each test. Full NVMe SSDs report worsened write performances, due to mechanisms such as wear-levelling and write amplification.
 
 \section{Throughput}
 
