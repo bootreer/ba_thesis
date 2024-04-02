@@ -1,0 +1,73 @@
+\documentclass[class=minimal,border=10pt]{standalone}
+\usepackage{tumcolor}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\pgfplotsset{compat=newest}
+\usetikzlibrary{pgfplots.groupplots}
+\pgfplotsset{grid style={dotted}}
+\usetikzlibrary{plotmarks}
+
+\begin{document}
+\tikzset{every mark/.append style={scale=1.2}}
+\begin{tikzpicture}
+\begin{axis}[
+  ybar,
+  yscale=0.5,
+  bar width=0.75cm,
+  width=\textwidth,
+  symbolic x coords={read,write},
+  % xmin=0, xmax=4,
+  % xtick={,test,ttest,teest}
+  xtick=data,
+  x tick label style={draw=none},
+  ymin=0,
+  ylabel style={align=center},
+  ytick={10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130},
+  ylabel=KIOPS,
+  ymajorgrids=true,
+  scale only axis,
+  nodes near coords,
+  nodes near coords align={vertical},
+  grid=major,
+  enlarge x limits=0.5,
+  legend columns=2,
+  legend pos = north west,
+  legend style = {at={(0.05,1.90)}, anchor = north west},
+  % y tick style={draw=none}
+  % enlarge x limits =0.2,
+]
+
+\addplot [color=TUMGreen, fill=TUMGreen, thick] coordinates {
+  (read,12.7)
+  (write,60.8)
+  };
+
+\addplot [color=TUMBlue, fill=TUMBlue, thick] coordinates {
+  (read,10.4)
+  (write,39.2)
+  };
+
+\addplot [color=TUMOrange, fill=TUMOrange, thick] coordinates {
+  (read,12.5)
+  (write,57.7)
+  };
+
+\addplot [color=TUMRed, fill=TUMRed, thick] coordinates {
+  (read,14.5)
+  (write,121)
+  };
+
+\addplot [color=TUMPurple, fill=TUMPurple, thick] coordinates {
+  (read,14.4)
+  (write,0)
+  };
+\addplot [color=TUMBlack, fill=TUMBlack, thick] coordinates {
+  (read,19)
+  (write,60)
+  };
+
+\legend{\texttt{psync}, \texttt{libaio}, \texttt{io\_uring}, SPDK, vroom, Data sheet}
+\end{axis}
+\end{tikzpicture}
+\end{document}
