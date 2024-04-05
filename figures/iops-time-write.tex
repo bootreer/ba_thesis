@@ -1,0 +1,32 @@
+
+\documentclass[class=minimal,border=10pt]{standalone}
+\usepackage{tumcolor}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\pgfplotsset{compat=newest}
+\usetikzlibrary{pgfplots.groupplots}
+\pgfplotsset{grid style={dotted}}
+\usetikzlibrary{plotmarks}
+
+\begin{document}
+\tikzset{every mark/.append style={scale=1.2}}
+\begin{tikzpicture}
+  \begin{axis}[
+    set layers,
+    xmin=0, xmax=899.5,
+    ylabel={IOPS},
+    width=100cm,
+    xlabel={Time [s]},
+    ]
+
+\addplot [mark=none,color=TUMBlack, thick] table[col sep=comma, x=time, y expr=\thisrow{iops}/1000] {data/vroom_qd32t4_write_iops_fixed.csv};
+\addplot [mark=none,color=TUMBlue, thick] table[col sep=comma, x=time, y expr=\thisrow{iops}/1000] {data/iouring_randwrite_qd32t4_iops.csv};
+\addplot [mark=none,color=TUMYellow, thick] table[col sep=comma, x=time, y expr=\thisrow{iops}/1000] {data/libaio_randwrite_qd32t4_iops.csv};
+\addplot [mark=none,color=TUMRed, thick] table[col sep=comma, x expr=\thisrow{time}, y expr=\thisrow{iops}/1000] {data/spdk_randwrite_qd32t4_iops.csv};
+
+
+
+\end{axis}
+\end{tikzpicture}
+\end{document}
