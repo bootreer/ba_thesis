@@ -15,7 +15,7 @@
   maxbibnames=99,
   giveninits,
   uniquename=init]{biblatex}
-\usepackage[final]{graphicx}
+\usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{textcomp}
 \usepackage{scrhack} % necessary for listings package
@@ -24,16 +24,19 @@
 \usepackage{booktabs}
 \usepackage[labelfont=bf]{caption}
 \usepackage[final]{microtype}
-\usepackage[final, hidelinks, pdfusetitle]{hyperref} % hidelinks removes colored boxes around references and links
 \usepackage{listings}
 \usepackage{./include/listings-rust}
 \usepackage{multirow}
+\usepackage{subcaption}
 
-\hypersetup{
-pdftitle={\getTitle},
-pdfsubject={\getDoctype},
-pdfauthor={\getAuthor},
-pdfkeywords={}
+\usepackage[hidelinks, pdfusetitle]{hyperref} % hidelinks removes colored boxes around references and links
+\AtBeginDocument{
+  \hypersetup{
+    pdftitle={\getTitle},
+    pdfsubject={\getDoctype},
+    pdfauthor={\getAuthor},
+    pdfkeywords={}
+  }
 }
 
 \usepackage{float}
@@ -90,32 +93,4 @@ pdfkeywords={}
 }
 \makeatother
 
-% If Draft 
-\usepackage{ifdraft}
-
-% Show labels in draft
-\usepackage[inline]{showlabels}
-\ifdraft{
-	\showlabels[\color{TUMblue}]{cite}
-	\showlabels[\color{TUMorange}]{ref}
-}{}
-
-\usepackage{showkeys}
-
-% Draft Footer 
-\ifdraft{
-	\usepackage[draft=false]{scrlayer-scrpage} % Use this as final to avoid rulers
-	\cfoot*{Draft Version (\today)}
-}{}
-
-% FixMe Notes and Warnings
-\usepackage{fixme}
-\fxsetup{theme=color,author=}
-
-% Chapter Symbols for progress
-\def\draftEmpty{\rlap{\protect\makebox[-3cm]{\color{red}$\circ$}}}
-\def\draftProgress{\rlap{\protect\makebox[-3cm]{\color{yellow}$\circ$}}}
-\def\draftDone{\rlap{\protect\makebox[-3cm]{\color{green}$\circ$}}}
-
-% TUM Logo
 \input{include/tum.sty}

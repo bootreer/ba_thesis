@@ -23,8 +23,8 @@
   x tick label style={draw=none},
   ymin=0,
   ylabel style={align=center},
-  ytick={100, 200, 300, 400, 500, 600},
-  ylabel=KIOPS,
+  % ytick={100, 200, 300, 400, 500, 600},
+  ylabel={Throughput [KIOPS]},
   ymajorgrids=true,
   scale only axis,
   nodes near coords,
@@ -50,12 +50,12 @@
 
 \addplot [color=TUMRed, fill=TUMRed, thick] coordinates {
   (read,436)
-  (write,253)
+  (write,276)
   };
 
 \addplot [color=TUMOrange, fill=TUMOrange, thick] coordinates {
   (read,444)
-  (write,276)
+  (write,255)
   };
 \addplot [color=TUMTurquois, fill=TUMTurquois, thick] coordinates {
   (read,600)

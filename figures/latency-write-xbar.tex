@@ -1,0 +1,77 @@
+\documentclass[class=minimal,border=0pt]{standalone}
+\usepackage{tumcolor}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\pgfplotsset{compat=newest}
+\usetikzlibrary{pgfplots.groupplots}
+\pgfplotsset{grid style={dotted}}
+\usetikzlibrary{plotmarks}
+
+\begin{document}
+\tikzset{every mark/.append style={scale=1.2}}
+\begin{tikzpicture}
+\begin{axis}[
+  xbar,
+  % xscale=0.5,
+  % bar width=0.5cm,
+  % width=\textwidth,
+  symbolic y coords={psync,iou,libaio,spdk,vroom},
+  yticklabels={\texttt{psync}, \texttt{io\_uring}, \texttt{libaio}, SPDK, vroom},
+  % xmin=0, xmax=4,
+  % xtick={,test,ttest,teest}
+  ytick=data,
+  % x tick label style={draw=none},
+  xmin=0,
+  xmax=46,
+  xlabel style={align=center},
+  xlabel={Latency [$\mu$s]},
+  % ymajorgrids=true,
+  scale only axis,
+  nodes near coords,
+  nodes near coords align={horizontal},
+  grid=major,
+  enlarge y limits=0.15,
+  legend columns=3,
+  legend pos = north west,
+  legend style = {at={(0.5,1.02)}, anchor = south},
+  % y tick style={draw=none}
+  % enlarge x limits =0.2,
+]
+
+\addplot [color=TUMBlue, fill=TUMBlue, thick] coordinates {
+  (15.42,psync)
+  (16.26,iou)
+  (23.16,libaio)
+  (7.71,spdk)
+  (7.92,vroom)
+  };
+
+\addplot [color=TUMGreen, fill=TUMGreen, thick] coordinates {
+  (16.51,psync)
+  (17.87,iou)
+  (26.14,libaio)
+  (10.39,spdk)
+  (8.16,vroom)
+  };
+
+\addplot [color=TUMOrange, fill=TUMOrange, thick] coordinates {
+  (33.91,psync)
+  (33.72,iou)
+  (39.82,libaio)
+  (20.88,spdk)
+  (20.08,vroom)
+  };
+
+% \addplot [color=TUMRed, fill=TUMRed, thick] coordinates {
+%   };
+%
+% \addplot [color=TUMPurple, fill=TUMPurple, thick] coordinates {
+%   };
+% \addplot [color=TUMBlack, fill=TUMBlack, thick] coordinates {
+%   };
+
+\legend{Average, 99th percentile, 99.99th percentile}
+\end{axis}
+\end{tikzpicture}
+\end{document}

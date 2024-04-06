@@ -251,5 +251,7 @@ TSWLatexianTemp*
 # generated if using elsarticle.cls
 *.spl
 
+*tmp/
+
 # Mac
 .DS_Store

@@ -1,0 +1,51 @@
+\documentclass[class=minimal,border=10pt]{standalone}
+\usepackage{tumcolor}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\pgfplotsset{compat=newest}
+\usetikzlibrary{pgfplots.groupplots}
+\pgfplotsset{grid style={dotted}}
+\usetikzlibrary{plotmarks}
+
+\begin{document}
+\tikzset{every mark/.append style={scale=1.2}}
+\begin{tikzpicture}
+\begin{axis}[
+  % yscale=0.5,
+  height=5cm,
+  width=5cm,
+  xmin=1,xmax=32,
+  xtick=data,
+  xmode=log,
+  xlabel={threads},
+  xtick={1,2,4,8,16,32},
+  xticklabels={1,2,4,8,16,32},
+  ylabel style={align=center},
+  ylabel={Throughput [KIOPS]},
+  ymajorgrids=true,
+  scale only axis,
+  % nodes near coords,
+  % nodes near coords align={vertical},
+  grid=major,
+  % enlarge x limits=0.5,
+  % legend columns=2,
+  % legend pos = north west,
+  % legend style = {at={(0.05,1.90)}, anchor = north west},
+  % y tick style={draw=none}
+  enlarge x limits = 0.1,
+  enlarge y limits = 0.1,
+]
+
+\addplot [color=TUMBlack, thick, mark=*] coordinates {
+  (1,14)
+  (2,28)
+  (4,55)
+  (8,104)
+  (16,184)
+  (32,288)
+  };
+
+\end{axis}
+\end{tikzpicture}
+\end{document}

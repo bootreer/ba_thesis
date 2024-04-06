@@ -1,0 +1,63 @@
+\documentclass[class=minimal,border=10pt]{standalone}
+\usepackage{tumcolor}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\pgfplotsset{compat=newest}
+\usetikzlibrary{pgfplots.groupplots}
+\pgfplotsset{grid style={dotted}}
+\usetikzlibrary{plotmarks}
+\pgfplotsset{
+    mark repeat*/.style={
+        scatter,
+        scatter src=x,
+        scatter/@pre marker code/.code={
+            \pgfmathtruncatemacro\usemark{
+                (\coordindex==(\numcoords-#1)
+            }
+            \ifnum\usemark=0
+                \pgfplotsset{mark=none}
+            \fi
+        },
+        scatter/@post marker code/.code={}
+    }
+}
+\begin{document}
+\tikzset{every mark/.append style={scale=1.2}}
+\begin{tikzpicture}
+  \begin{axis}[
+    set layers,
+    height=0.5\textwidth,
+    width=\textwidth,
+    yscale=1,
+    grid=major,
+    xmin=0, xmax=900,
+    ylabel={Throughput [KIOPS]},
+    ylabel style={align=center},
+    xlabel={Time [s]},
+    ]
+
+\addplot [mark=none,color=TUMOrange, thick, smooth] table[col sep=comma, x=time, y expr=\thisrow{iops}/1000] {data/vroom-write-iops.csv};
+\addplot [mark=none,color=TUMBlack, thick, smooth] table[col sep=comma, x=time, y expr=\thisrow{iops}/1000] {data/iouring-write-iops.csv};
+\addplot [mark=none,color=TUMBlue, thick,smooth] table[col sep=comma, x=time, y expr=\thisrow{iops}/1000] {data/libaio-write-iops.csv};
+\addplot [mark=none,color=TUMRed, thick,smooth] table[col sep=comma, x=time, y expr=\thisrow{iops}/1000] {data/spdk-write-iops.csv};
+% \addplot[mark=none, domain=0:900, smooth, variable=\x, color=TUMOrange, thick] plot ({\x}, {600});
+\addplot[mark=none,color=black!60,forget plot,dashed,thick] coordinates {
+(0,550)
+(900,550)
+};
+
+% \addplot[mark=none,color=black!60,forget plot,dashed,thick] coordinates {
+% (0,600)
+% (900,600)
+% };
+
+  \legend{vroom, \texttt{io\_uring}, \texttt{libaio}, SPDK}
+
+\begin{pgfonlayer}{axis foreground}
+  \node[anchor = south east,yshift=-0.425em] at (axis cs: 400,570) { max. write };
+  % \node[anchor = north east,yshift=-0.425em] at (axis cs: 300,670) { max. read };
+\end{pgfonlayer}
+\end{axis}
+\end{tikzpicture}
+\end{document}
