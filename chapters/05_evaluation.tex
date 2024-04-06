@@ -50,8 +50,9 @@ To investigate the effects the number of threads and queue depth have on through
 \section{Comparison with other I/O engines}
 \texttt{libaio}, \texttt{io\_uring} and \texttt{psync}, and in some cases SPDK are tested using \texttt{fio}\footnote{\url{https://github.com/axboe/fio}} with the configuration in \autoref{lst:fio_conf}. In \autoref{fig:iops-qd1}, \autoref{fig:iops-qd32} we use numbers from SPDK's own \texttt{spdk\_perf\_tool} tool, as their \texttt{fio} plugin introduces some overhead; for \autoref{fig:ccdf}, \autoref{fig:lat-qd1} we use log files \texttt{fio} creates.
 
-We use the following \texttt{fio} configuration:
-\begin{lstlisting}[label=lst:fio_conf, caption=\texttt{fio} configuration]
+We use the \texttt{fio} configuration in \autoref{lst:fio_conf}. The same parameters were used when testing with \texttt{spdk\_perf\_tool}.
+
+\begin{lstlisting}[float, label=lst:fio_conf, caption=\texttt{fio} configuration]
   [global]
   io_engine={spdk,io_uring,libaio,psync}
   rw={randread,randwrite,read,write}
@@ -65,10 +66,9 @@ We use the following \texttt{fio} configuration:
   group_reporting=1
 \end{lstlisting}
 
-The same parameters were used when testing with \texttt{spdk\_perf\_tool}.
 
 \subsection{Queue depth 1}
-Here we tested single-threaded read and write performances when using a queue depth of 1, i.e. synchronous read and writes.
+Here we test the single-threaded read and write performances when using a queue depth of 1, i.e. synchronous read and writes.
 
 \begin{figure}
   \centering

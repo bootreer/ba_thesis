@@ -2,9 +2,9 @@
 \section{Memory-Mapped I/O}\label{section:MMIO}
 Memory-mapped I/O (MMIO) is a method of performing I/O operations between the CPU and peripheral devices with a computer. To reset and configure a NVMe drive, as well as submit new requests, we need to access its Base Address Registers (BARs); on PCIe devices, these registers are accessed through MMIO. The subsystem \texttt{uio} in Linux exposes the BARs, as well as other required interfaces in the pseudo-filesystem \texttt{sysfs}. We map the BARs into main memory as shared memory, so that changes the mapped memory are also written back to the file and vice-versa.
 
-In our code, mapping the BARs to main memory is done by the function \texttt{pci\_map\_resource()} (\ref{lst:mmap}) in \texttt{pci.rs}. Here, we open the \texttt{resource0} file with read and write access and pass the file descriptor and its length to \texttt{libc::map}. As \texttt{libc::mmap} directly calls \texttt{mmap(2)}, the function call is wrapped in an \texttt{unsafe} block. If the function returns a null pointer or the length of the file is 0, we return an error, otherwise the pointer and the length of the file are returned as a pair.
+In our code, mapping the BARs to main memory is done by the function \texttt{pci\_map\_resource()} (see \ref{lst:mmap}) in \texttt{pci.rs}. Here, we open the \texttt{resource0} file with read and write access and pass the file descriptor and its length to \texttt{libc::map}. As \texttt{libc::mmap} directly calls \texttt{mmap(2)}, the function call is wrapped in an \texttt{unsafe} block. If the function returns a null pointer or the length of the file is 0, we return an error, otherwise the pointer and the length of the file are returned as a pair.
 
-\begin{lstlisting}[language=Rust,label=lst:mmap,caption=Memory mapping a PCI resource in Rust]
+\begin{lstlisting}[float, language=Rust,label=lst:mmap,caption=Memory mapping a PCI resource in Rust]
 pub fn pci_map_resource(pci_addr: &str) -> Result<(*mut u8, usize), Error> {
     let path = format!("sys/bus/pci/devices/{}/resource0", pci_addr);
 
@@ -38,7 +38,6 @@ Enabling the usage of huge pages on the operating system is done with the shell 
 In \texttt{memory.rs} we define the struct \texttt{Dma<T>} and the function \texttt{allocate()}, which allocates a huge page and maps it to memory, and returns a struct encapsulating a virtual address to the object of type \texttt{T} and the physical address. We also define the trait \texttt{DmaSlice} with the functions \texttt{chunks} and \texttt{slice}, how these functions are relevant will be described in \autoref{subsection:io}.
 
 % \section{Architecture}
-% The struct \texttt{NvmeDevice} is able to run as the driver itself, handling admin and I/O commands and also polling their completions.
 
 \section{Driver initialisation}
 In this section, we will go over the initialisation process of the driver, looking what happens within the function \texttt{init()} in \texttt{lib.rs} and the functions/methods it calls; \texttt{init()} returns an instance of \texttt{NvmeDevice}, if nothing goes wrong. The struct is the driver for a single NVMe drive, and can handle admin and I/O requests.
@@ -51,3 +50,8 @@ The BARs of the NVMe device is then mapped into main memory, as described in \au
 After this, we request an I/O completion queue, followed by a request for an I/O submission queue. Then we identify the namespaces, which get stored in a \texttt{HashMap} in the \texttt{NvmeDevice}.
 
 \section{I/O operations}\label{subsection:io}
+The struct \texttt{NvmeDevice} is able to run as the driver itself, handling admin and I/O commands and also polling their completions, thus it exposes I/O operations with the methods \texttt{read()}, \texttt{write()},  \texttt{read\_copied()}, \texttt{write\_copied()}, as well as \texttt{read\_batched()} and \texttt{write\_batched()}. The initial two methods are zero-copy, taking an instance of a struct which implements the trait \texttt{DmaSlice} as the source buffer for writes and destination for reads, allowing us to iterate over the object in 8096 byte chunks. Currently we only iterate over 8096 bytes, as that is the maximum length we can pass to the NVMe command without the use of PRP lists. If we were to use PRP lists, each request would require constructing a PRP list on a DMA-able buffer.
+
+The latter four methods take a \texttt{u8} slice, which gets copied into the \texttt{NvmeDevice}'s DMA buffer for writes, and copied from for reads. In \texttt{read\_copied()} and \texttt{write\_copied()} we iterate over 512 KiB chunks, which is equal to 128 PRP list entries, as for some reason the I/O operation returns an error when the list is longer than 128 entries. \texttt{read\_batched()} and \texttt{write\_batched()} both take a parameter specifying the batch size of the operation. Here we also iterate over 512 KiB chunks, but instead of a single submission request for each chunk, we split it into multiple submissions which get simultaneously added to the queue and polled for. As NVMe SSDs can process multiple submissions at once, batching generally leads to higher throughput, similarly to how increasing queue depth improves performance.
+
+Similar to SPDK, \texttt{NvmeDevice} can also provision a submission and completion queue pair \texttt{NvmeQueuePair} with the method \texttt{create\_io\_queue\_pair()}.
