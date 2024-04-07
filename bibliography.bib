@@ -75,17 +75,40 @@
 }
 
 @inproceedings{user_space_net,
-author = {Emmerich, Paul and Pudelko, Maximilian and Bauer, Simon and Carle, Georg},
-title = {User Space Network Drivers},
-year = {2018},
-isbn = {9781450355858},
-publisher = {Association for Computing Machinery},
-url = {https://doi.org/10.1145/3232755.3232767},
-doi = {10.1145/3232755.3232767},
-abstract = {The rise of user space packet processing frameworks like DPDK and netmap makes low-level code more accessible to developers and researchers. Previously, driver code was hidden in the kernel and rarely modified-or even looked at-by developers working at higher layers. These barriers are gone nowadays, yet developers still treat user space drivers as black-boxes magically accelerating applications. We want to change this: every researcher building network applications should understand the intricacies of the underlying drivers, especially if they impact performance. We present ixy, a user space network driver designed for simplicity and educational purposes. Ixy focuses on the bare essentials of user space packet processing: a packet forwarder including the whole NIC driver uses less than 1000 lines of C code.Our code is available as free and open source under the BSD license at https://github.com/emmericp/ixy.},
-booktitle = {Proceedings of the Applied Networking Research Workshop},
-pages = {91–93},
-numpages = {3},
-location = {Montreal, QC, Canada},
-series = {ANRW '18}
+  author = {Emmerich, Paul and Pudelko, Maximilian and Bauer, Simon and Carle, Georg},
+  title = {User Space Network Drivers},
+  year = {2018},
+  isbn = {9781450355858},
+  publisher = {Association for Computing Machinery},
+  url = {https://doi.org/10.1145/3232755.3232767},
+  doi = {10.1145/3232755.3232767},
+  abstract = {The rise of user space packet processing frameworks like DPDK and netmap makes low-level code more accessible to developers and researchers. Previously, driver code was hidden in the kernel and rarely modified-or even looked at-by developers working at higher layers. These barriers are gone nowadays, yet developers still treat user space drivers as black-boxes magically accelerating applications. We want to change this: every researcher building network applications should understand the intricacies of the underlying drivers, especially if they impact performance. We present ixy, a user space network driver designed for simplicity and educational purposes. Ixy focuses on the bare essentials of user space packet processing: a packet forwarder including the whole NIC driver uses less than 1000 lines of C code.Our code is available as free and open source under the BSD license at https://github.com/emmericp/ixy.},
+  booktitle = {Proceedings of the Applied Networking Research Workshop},
+  pages = {91–93},
+  numpages = {3},
+  location = {Montreal, QC, Canada},
+  series = {ANRW '18}
+}
+
+@inproceedings{driver_lang,
+  author={Emmerich, Paul and Ellmann, Simon and Bonk, Fabian and Egger, Alex and Sánchez-Torija, Esaú García and Günzel, Thomas and di Luzio, Sebastian and Obada, Alexandru and Stadlmeier, Maximilian and Voit, Sebastian and Carle, Georg},
+  booktitle={2019 ACM/IEEE Symposium on Architectures for Networking and Communications Systems (ANCS)},
+  title={The Case for Writing Network Drivers in High-Level Programming Languages},
+  year={2019},
+  pages={1-13},
+  doi={10.1109/ANCS.2019.8901892}
+  }
+
+@inproceedings{cutler,
+  author = {Cutler, Cody and Kaashoek, M. Frans and Morris, Robert T.},
+  title = {The benefits and costs of writing a POSIX kernel in a high-level language},
+  year = {2018},
+  isbn = {9781931971478},
+  publisher = {USENIX Association},
+  abstract = {This paper presents an evaluation of the use of a high-level language (HLL) with garbage collection to implement a monolithic POSIX-style kernel. The goal is to explore if it is reasonable to use an HLL instead of C for such kernels, by examining performance costs, implementation challenges, and programmability and safety benefits.The paper contributes Biscuit, a kernel written in Go that implements enough of POSIX (virtual memory, mmap, TCP/IP sockets, a logging file system, poll, etc.) to execute significant applications. Biscuit makes liberal use of Go's HLL features (closures, channels, maps, interfaces, garbage collected heap allocation), which subjectively made programming easier. The most challenging puzzle was handling the possibility of running out of kernel heap memory; Biscuit benefited from the analyzability of Go source to address this challenge.On a set of kernel-intensive benchmarks (including NGINX and Redis) the fraction of kernel CPU time Biscuit spends on HLL features (primarily garbage collection and thread stack expansion checks) ranges up to 13\%. The longest single GC-related pause suffered by NGINX was 115 microseconds; the longest observed sum of GC delays to a complete NGINX client request was 600 microseconds. In experiments comparing nearly identical system call, page fault, and context switch code paths written in Go and C, the Go version was 5\% to 15\% slower.},
+  booktitle = {Proceedings of the 13th USENIX Conference on Operating Systems Design and Implementation},
+  pages = {89–105},
+  numpages = {17},
+  location = {Carlsbad, CA, USA},
+  series = {OSDI'18}
 }

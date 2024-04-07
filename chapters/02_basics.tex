@@ -3,14 +3,14 @@
 Before getting into the details of our driver, some concepts central to any NVMe driver need to be explained in detail first. These being the specification of NVMe, how device drivers are written and operate in Linux, and our programming language of choice, Rust.
 
 \section{Non-Volatile Memory Express}
-Non-Volatile Memory Express (NVMe) itself ``is an open collection of standards and information to fully expose [\ldots] non-volatile memory in all types of computer environments''\footnote{\url{https://nvmexpress.org/about/}}. Relevant to the thesis is the NVMe specification, an open logical device interface specificiation for accessing non-volatile storage media attached via the PCIe bus. NVMe was designed to capitilise on the low latency and parallelism of SSDs, providing improvements over older storage interfaces such as SATA or SAS in terms of speed and latency. This specification defined several key components:
+Non-Volatile Memory Express (NVMe) itself ``is an open collection of standards and information to fully expose [\ldots] non-volatile memory in all types of computer environments''\footnote{\url{https://nvmexpress.org/about/}}. Relevant to the thesis is the NVMe specification, an open logical device interface specificiation for accessing non-volatile storage media attached via the PCIe bus. NVMe was designed to capitilise on the low latency and parallelism of SSDs, providing improvements over older storage interfaces such as SATA or SAS in terms of speed and latency. This specification defines several key components:
 \begin{itemize}
         \item \textbf{NVMe commands}: the basic units of work that the host system uses to communicate with the NVMe device. These commands may involve I/O operations or administrative tasks. These submission entries contain the command opcode, an identifier, and values pertaining to the command, e.g. data pointers for read/write operations. An example struct definition can be seen in \autoref{lst:nvme_command}.
         \item \textbf{Submission Queues (SQ)}: The host system places commands here to be processed by the NVMe device. Each NVMe device can support multiple SQs, enabling parallel command processing.
         \item \textbf{Completion Queues (CQ)}: The NVMe device places completion entries noticing that commands have to processed. Each completion queue is associated with a submission queue, however the specification allows multiple submission queues to be associated with a single completion queue.
 \end{itemize}
 
-\begin{lstlisting}[float,language=Rust,label=lst:nvme_command,caption=The minimal NVMe command defined as a struct in Rust]
+\begin{lstlisting}[float,language=Rust,label=lst:nvme_command,caption=NVMe command defined as a struct in Rust]
 #[repr(packed)]
 pub struct NvmeCommand {
     pub opcode: u8,        // Command opcode
@@ -20,7 +20,7 @@ pub struct NvmeCommand {
     pub _rsvd: u64,        // Reserved
     pub md_ptr: u64,       // Metadata pointer
     pub d_ptr: [u64; 2],   // Data pointers
-    pub cdw10: u32,        // Command dwords; usage varies from command to command
+    pub cdw10: u32,        // Command dwords; usage is command specific
     pub cdw11: u32,
     pub cdw12: u32,
     pub cdw13: u32,
@@ -29,19 +29,18 @@ pub struct NvmeCommand {
 } // 64 bytes
 \end{lstlisting}
 
-The specification supports 1 Administrative submission and completion queue pair and up to 65535 I/O submission and completion queues, allowing for high scalability and the ability to handle high volumes of I/O requests. Both the submission and completion queue operate as ring buffers, supporting up to 65536 entries and 65535 outstanding requests.
-
-TODO: layout of submission and completion entry
+The specification supports 1 Administrative submission and completion queue pair and up to 65535 I/O submission and completion queues, allowing for high scalability and the ability to handle high volumes of I/O requests. Both the submission and completion queue operate as ring buffers, supporting up to 65536 entries and 65535 outstanding requests. Due to the command identifier being 16 bits in size, the NVMe controller in total supports up to 65536 outstanding requests at a time.
 
 \subsection{Submitting and completing requests}
 Submission and Completion Queues operate similarly to a Consumer-Producer pattern, e.g. in the case of an SQ, the host produces requests and adds them to the queue for the NVMe device to consume. Here we keep track of a $\texttt{tail}$ pointer as the producer, pointing to the next free slot and a $\texttt{head}$ pointer, pointing to the next slot to be consumed.
 
-Submitting requests to the NVMe device is done by constructing and then inserting a submission entry into the queue and updating the corresponding doorbell register to the new $\texttt{tail}$ value, notifying the NVMe device of the newly submitted request. Upon completion, the NVMe controller will post a completion entry into the Completion Queue belonging to the Submission Queue. The completion entries contain the command identifier, the status of the operation, and other command specific information (see \ref{lst:nvme_completion}). After processing the completion, the host then updates the doorbell register of the completion queue to signal that the completion entry has been acknowledged and processed. Depending on how the driver configures the NVMe controller, the device may send an interrupt signal upon completion.
+Submitting requests to the NVMe device is done by constructing and then inserting a submission entry into the queue and updating the corresponding doorbell register to the new $\texttt{tail}$ value, notifying the NVMe device of the newly submitted request. Upon completion, the NVMe controller will post a completion entry into the Completion Queue belonging to the Submission Queue. The completion entries contain the command identifier, the status of the operation, and other command specific information (see \ref{lst:nvme_completion}). After processing the completion, the host then updates the doorbell register of the completion queue to signal that the completion entry has been acknowledged and processed. Depending on how the driver configures the NVMe controller, the device may send an interrupt signal upon completion. Each SQ and CQ has its own doorbell register.
 
-Each SQ and CQ has its own doorbell register.
-% Communicating with a NVMe device connected requires interacting with its Administrative and I/O controllers. This interaction is done through the use of so-called submission and completion queues.
+For reading and writing depending on I/O size different data pointers are passed to the command. The addresses passed to the data pointers are called Physical Region Page (PRP), which is nothing more than a pointer to a physical memory page. There exists another data structure for describing data buffers called Scatter Gather Lists (SGL), however these are not supported by all NVMe SSD's while PRPs are.
 
-% (TODO: How submitting commands work, and how completions are done --> tikz graphic)
+For I/O operations less or equal to one page size (by default 4 KiB) we pass the physical address to \texttt{d\_ptr[0]}. For requests up to two pages in size, we set \texttt{d\_ptr[0]} to the physical address and \texttt{d\_ptr[1]} to the address of the second block of data, e.g. \texttt{d\_ptr[0] + page\_size} for contiguous memory. Once the I/O operation spans more than two pages, a pointer to a PRP list is passed to \texttt{d\_ptr[1]}.
+
+TODO: tikz graphic?
 
 
 \begin{lstlisting}[float,language=Rust,label=lst:nvme_completion,caption=NVMe completion entry defined as a struct in Rust]
@@ -56,10 +55,8 @@ pub struct NvmeCompletion {
 } // 16 bytes
 \end{lstlisting}
 
-\section{NVMe devices in Linux}
-% TODO: kernel space vs. user space. how user space drivers work. dma? vfio?
 
-\subsection{Device drivers in Linux}
+\section{Device drivers in Linux}
 In the Linux operating system, device drivers play a pivotal role in the management and operation of hardware. They serve as the interface between the hardware and the software, allowing the operating system and applications that run on it to interact with hardware components without needing to understand the details of how the hardware operates. This abstraction is vital for the development of a stable, portable, and scalable operating system.
 
 Linux drivers interact with the kernel and hardware through a set of predefined kernel functions. This interface abstracts away the complexities of the hardware and provides a consistent programming interface for driver developers. A driver typically registers itself with the kernel to handle specific hardware device IDs, and the kernel then calls into the driver when the application or system requires operations on this device. The operations a driver can perform include initialisation, reading data from or writing data to the device, and handling interrupts triggered by the hardware.
@@ -80,8 +77,8 @@ An alternative approach to kernel space device drivers is a driver that runs ent
 Given these advantages, we chose to develop a user space NVMe driver rather than kernel space.
 
 \section{Rust}
+While \texttt{C} remains the language used for the Linux kernel, it isn't necessarily the ideal language for driver development. In 2017, Cutler et al. analysed bugs in the Linux kernel which enabled arbitrary code execution and found out of 65, 40 bugs stemmed from invalid memory accesses, such as use-after-frees \cite{cutler}; it was found that 39 of these bugs stemmed from device drivers \cite{driver_lang}. Memory bugs remain amongst the most exploited vulnerabilities\footnote{\url{https://cwe.mitre.org/top25/archive/2023/2023_kev_list.html}}, and companies such as Google have begun to transition towards the use of memory-safe languages from \texttt{C} and \texttt{C++}.
 
-Rust is a modern systems programming language with a focus on safety, speed and concurrency. It was designed to provide memory saftey and thread safety guarantees through a unique onwership model without any performance pitfalls. These safety checks are done at compile time, eliminating common bugs like null-pointer dereferences and data races. These features make Rust ideal for developing (user space) device drivers where safety, effiency are paramount. Furthermore, Rust is a compiled language without a garbage collector, leading to much better performance compared to interpreted languages and less overhead compared to languages that have a garbage collector.
+Rust is a modern systems programming language with a focus on safety, speed and concurrency. It was designed to provide memory and thread safety guarantees through a unique onwership model without any performance pitfalls. These safety checks are done at compile time, eliminating common bugs like null-pointer dereferences and data races. Furthermore, Rust is a compiled language without a garbage collector, leading to much better performance compared to interpreted languages and less overhead compared to languages that have a garbage collector.
 
-
-TODO: what is rust
+With all these factors in mind, Rust seems to be an ideal programming language for developing (user space) device drivers where safety and effiency are paramount.

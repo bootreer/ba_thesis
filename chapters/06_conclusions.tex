@@ -1,2 +1,7 @@
 \chapter{Conclusion}\label{c:c}
+What we have shown here is that it is very much feasible to develop a user space NVMe driver in a higher level programming language with similar performance to SPDK, while at the same time containing fewer lines of driver code overall.
+
 \paragraph{Future Work}
+There are still many aspects in the driver where optimizations can be investigated, such as the effect of prefetching pages for I/O operations, or implementing IOMMU support, so root priviledges are not required to start the driver, and measuring the performance impact it may have.
+
+As vroom does not support all NVMe features, there are still many features we can add to the driver, like supporting SGLs and comparing it to PRP lists.

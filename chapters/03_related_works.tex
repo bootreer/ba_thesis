@@ -3,8 +3,6 @@
 \section{SPDK}
 Originally developed by Intel, the Storage Performance Development Kit (SPDK) provides a large set of tools libraries for high-performance storage applications, at the center of which is its NVMe driver. The driver itself is poll-based, zero-copy, and runs in user space. By eliminating interrupts and system calls entirely, SPDK achieves the highest performance out of all modern storage APIs\cite{storage_api}. However with its added complexity, it raises the question whether it's possible to write a user space, poll-based driver in Rust which achieves similar performance, while also maximising its simplicity.
 
-% Although the public API is quite manageable, having a look at the source code reveals a very complex driver written in C.
-
 \section{Redox}
 Redox is a Unix-like operating system written entirely in Rust, with the goal of being a ``robust, reliable and safe general-purpose operating system''\footnote{\url{https://redox-os.org/}}. Its development began in 2015 by Jeremy Soller and is still being actively worked on at the time of writing.
 

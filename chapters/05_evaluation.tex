@@ -35,14 +35,25 @@ Observing the trend of the throughput over time in \autoref{fig:vroom-iops-time}
     \label{fig:vroom-iops-time}
 \end{figure}
 
-To investigate the effects the number of threads and queue depth have on throughput, we performed multiple tests with different parameters on the read throughput rather than write to minimize variance.
+To investigate the effects the number of threads and queue depth (QD) have on throughput, we performed multiple tests with different parameters on the read throughput rather than write to minimize variance.
+
+Observing how the number of threads impact the throughput in \autoref{fig:vroom-iops-thread}, we see the throughput double each time we double the number of threads until 16 threads, afterwards we see gains are smaller. With a queue depth of 32, we see an increase in throughput until 8 threads, after which the throughput plateaus at around 460 KIOPS.
+
+When increasing the queue depth, we notice a similar growth where the IOPS doubles each time the queue depth doubles in size until QD16, however at QD64 the throughput is higher than at 64 threads by approx. 80 KIOPS. Increasing queue depth seems to lead to slightly better performance than increasing the threads when comparing ``queue depths'', i.e. QD32T4 ($\approx$ QD32 $\cdot$ 4) has a lower throughput than QD128T1.
 
 \begin{figure}
   \centering
-  \subcaptionbox {Threads vs. IOPS; queue depth 32} {\includegraphics[width=0.48\textwidth]{figures/vroom-iops-thread-qd32} \label{fig:vroom-iops-thread-qd32}}
-  \subcaptionbox {Queue depth vs. IOPS; single threaded} {\includegraphics[width=0.48\textwidth]{figures/vroom-iops-qd} \label{fig:vroom-iops-qd}}
-  \caption{Thread and queue depth's impacts on throughput}
-  \label{fig:vroom-thread-qd}
+  \subcaptionbox {Queue depth 1} {\includegraphics[width=0.48\textwidth]{figures/vroom-iops-qd} \label{fig:vroom-iops-thread-qd1}}
+  \subcaptionbox {Queue depth 32} {\includegraphics[width=0.48\textwidth]{figures/vroom-iops-thread-qd32} \label{fig:vroom-iops-thread-qd32}}
+  \caption{Threads vs. IOPS}
+  \label{fig:vroom-iops-thread}
+\end{figure}
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.48\textwidth]{figures/vroom-iops-qd}
+  \caption{Queue depth vs. IOPS}
+  \label{fig:vroom-iops-qd}
 \end{figure}
 
 % \section{Latency}
@@ -65,7 +76,6 @@ We use the \texttt{fio} configuration in \autoref{lst:fio_conf}. The same parame
   queue_depth={1,32}
   group_reporting=1
 \end{lstlisting}
-
 
 \subsection{Queue depth 1}
 Here we test the single-threaded read and write performances when using a queue depth of 1, i.e. synchronous read and writes.
@@ -121,3 +131,4 @@ For random writes, we see \texttt{libaio} yet again falling behind the other I/O
 
 
 \subsection{Summary}
+In summary, in these benchmarks we observe that our driver is able to achieve very similar performance and in some cases even better performance than SPDK, while outperforming the kernel based I/O APIs across the board. Overall the poll-based, user space NVMe drivers can reach much higher maximum throughput, while minimising overall I/O latencies by avoiding the kernel altogether.
