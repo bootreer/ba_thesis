@@ -15,12 +15,12 @@
   % yscale=0.5,
   height=5cm,
   width=10cm,
-  xmin=1,xmax=64,
+  xmin=1,xmax=1024,
   xtick=data,
   xmode = log,
   xlabel={Queue depth},
-  xtick={1,2,4,8,16,32,64},
-  xticklabels={1,2,4,8,16,32,64},
+  xtick={1,2,4,8,16,32,64,128,256,512,1023},
+  xticklabels={1,2,4,8,16,32,64,128,256,512,1023},
   ymin=0,
   ylabel style={align=center},
   ylabel={Throughput [KIOPS]},
@@ -48,7 +48,8 @@
   (64,406)
   (128,466)
   (256,482)
-  (512,4)
+  (512,480)
+  (1023,497)
   };
 
 \end{axis}

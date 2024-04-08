@@ -1,6 +1,6 @@
 \chapter{Evaluation}\label{chapter:eval}
 \section{Setup}
-All benchmarks are run on a system with an Intel Xeon E5-2660 with 251GiB of RAM running Ubuntu 23.10 with a 1TB Samsung Evo 970 Plus NVMe SSD; the throughput and bandwidth limits of the SSD are noted in \autoref{tab:evoplus}.
+All benchmarks are run on a system with an Intel Xeon E5-2660 with 251GiB of RAM running Ubuntu 23.10 with a 1TB Samsung Evo 970 Plus NVMe SSD, which has a 1GB cache; the throughput and bandwidth limits of the SSD are noted in \autoref{tab:evoplus}.
 
 \begin{table}
     \centering
@@ -26,7 +26,7 @@ For writes, the SSD is cleared beforehand, such that it is in a comparable state
 \section{Throughput}
 In this section, we will analyse the throughput capabilities of our NVMe driver, and how changing parameters affects the performance.
 
-Observing the trend of the throughput over time in \autoref{fig:vroom-iops-time}, we the write throughput begin at a heightened rate, at around 800 thousand IOPS (KIOPS) and after approx. 40 seconds decreasing to approx. 200 KIOPS. The SSD has a so-called ``TurboWrite'' buffer region of 42GB, allowing for higher write throughputs, so long the buffer is not fully saturated. On the other hand, read throughput stays relatively constant throughout the entire test, at around 440 KIOPS.
+Observing the trend of the throughput over time in \autoref{fig:vroom-iops-time}, we the write throughput begin at a heightened rate, at around 800 thousand IOPS (KIOPS) and after approx. 40 seconds decreasing to approx. 200 KIOPS. The SSD has a so-called ``TurboWrite'' buffer region of 42GB, allowing for higher write throughputs, so long the buffer is not fully saturated. Averaged over 900 seconds, we achieve 255 KIOPS when writing to an empty drive. On the other hand, read throughput stays relatively constant throughout the entire test, at around 440 KIOPS, 160 KIOPS below the datasheet value.
 
 \begin{figure}
   \centering
@@ -35,11 +35,11 @@ Observing the trend of the throughput over time in \autoref{fig:vroom-iops-time}
     \label{fig:vroom-iops-time}
 \end{figure}
 
-To investigate the effects the number of threads and queue depth (QD) have on throughput, we performed multiple tests with different parameters on the read throughput rather than write to minimize variance.
+To investigate the effects the number of threads and queue depth (QD) have on throughput, we performed multiple tests with different parameters on the read throughput rather than write to minimise variance.
 
 Observing how the number of threads impact the throughput in \autoref{fig:vroom-iops-thread}, we see the throughput double each time we double the number of threads until 16 threads, afterwards we see gains are smaller. With a queue depth of 32, we see an increase in throughput until 8 threads, after which the throughput plateaus at around 460 KIOPS.
 
-When increasing the queue depth, we notice a similar growth where the IOPS doubles each time the queue depth doubles in size until QD16, however at QD64 the throughput is higher than at 64 threads by approx. 80 KIOPS. Increasing queue depth seems to lead to slightly better performance than increasing the threads when comparing ``queue depths'', i.e. QD32T4 ($\approx$ QD32 $\cdot$ 4) has a lower throughput than QD128T1.
+When increasing the queue depth, we notice a similar growth where the IOPS doubles each time the queue depth doubles in size until QD16, however at QD64 the throughput is higher than at 64 threads by approx. 80 KIOPS. Increasing queue depth seems to lead to slightly better performance than increasing the threads when comparing ``queue depths'', i.e. QD32T4 ($\approx$ QD (32 $\cdot$ 4)) has a lower throughput than QD128T1.
 
 \begin{figure}
   \centering
@@ -88,7 +88,7 @@ Here we test the single-threaded read and write performances when using a queue 
 \end{figure}
 
 Looking at read throughput in \autoref{fig:iops-qd1}, none of the I/O engines come within 20\% of the maximum achievable IOPS of the SSD, performing between 10 and 15 KIOPS. In terms of write performance, we see \texttt{psync} and \texttt{io\_uring} right around 60 KIOPS, while \texttt{libaio} performing considerably below the limit of the SSD. Both SPDK and vroom achieve IOPS numbers doubling the limit stated by Samsung, at 128 KIOPS and 126 KIOPS, respectively.
-As Samsung has not specify the test parameters and environment used, it is likely they did not perform these read tests on a fully utilized drive and write test on an empty one. This means they would likely expect higher IOPS than what we observe, as the NVMe controller would not actually access the unwritten areas, increasing the overall IOPS number. While for writes the NVMe controller performs garbage collection when overwriting non-empty areas, introducing some overhead, and thus overall less IOPS.
+As Samsung has not specify the test parameters and environment used, it is likely they did not perform these read tests on a fully utilised drive and write test on an empty one. This means they would likely expect higher IOPS than what we observe, as the NVMe controller would not actually access the unwritten areas, increasing the overall IOPS number. While for writes the NVMe controller performs garbage collection when overwriting non-empty areas, introducing some overhead, and thus overall less IOPS.
 
 Comparing I/O engines against one another, we would expect the user space drivers to achieve higher throughput numbers than the rest, which is exactly the result we observe. SPDK and our driver achieve IOPS numbers within 1\% of another, while being noticeably more performant than the Linux I/O APIs, especially when writing. This difference is caused by system calls and the consequent context switches. This is especially visible in \autoref{fig:ccdf}, where the tail distribution of the I/O latencies is plotted; here all I/O engines share a similar distribution, however offset by a certain amount. The system call overhead from \texttt{psync} and \texttt{io\_uring} introduces around 10$\mu$s over SPDK and vroom, while \texttt{libaio} seemingly has some extra internal overhead adding an additional 10$\mu$s to the latencies.
 
@@ -129,6 +129,3 @@ For random writes, we see \texttt{libaio} yet again falling behind the other I/O
     \label{fig:iops-time-all}
 \end{figure}
 
-
-\subsection{Summary}
-In summary, in these benchmarks we observe that our driver is able to achieve very similar performance and in some cases even better performance than SPDK, while outperforming the kernel based I/O APIs across the board. Overall the poll-based, user space NVMe drivers can reach much higher maximum throughput, while minimising overall I/O latencies by avoiding the kernel altogether.
