@@ -47,6 +47,8 @@ We then unbind the kernel driver from the NVMe device by writing the PCI address
 
 The BARs of the NVMe device is then mapped into main memory, as described in \autoref{section:MMIO}. We then follow the initialisation procedure described in the NVMe specification: first, we disable the controller by setting the \texttt{EN} (enable) bit to 0 in the \texttt{CC} (Controller Configuration) register. We wait for the \texttt{ready} bit in the \texttt{CSTS} register to be set to 0, after which we can configure the controller. Then, we set the \texttt{ASQ} (Admin Submission Queue), \texttt{ACQ} (Admin Completion Queue) and the \texttt{AQA} (Admin Queue Attributes) to the physical addresses of the queues and the queue length, respectively. This is followed by setting the submission and completion entry sizes in \texttt{CC}. The controller is then enabled by setting the \texttt{EN} bit to 1, and we wait for the \texttt{CSTS} register to be set to 1. Now the NVMe controller is ready to process admin submissions. The relevant offsets for the registers are stored in the enum \texttt{NvmeRegs32} and \texttt{NvmeRegs64}.
 
+% accessing register be like
+
 After this, we request an I/O completion queue, followed by a request for an I/O submission queue, so the \texttt{NvmeDevice} can do I/O operations. Then we identify the namespaces, which get stored in a \texttt{HashMap} in the \texttt{NvmeDevice}.
 
 \section{I/O operations}\label{subsection:io}

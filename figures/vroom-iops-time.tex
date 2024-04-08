@@ -30,7 +30,7 @@
     height=0.5\textwidth,
     width=\textwidth,
     grid=major,
-    xmin=0, xmax=900,
+    xmin=0, xmax=200,
     ylabel={Throughput [KIOPS]},
     ylabel style={align=center},
     xlabel={Time [s]},
@@ -54,8 +54,8 @@
 \legend{Write, Read}
 
 \begin{pgfonlayer}{axis foreground}
-  \node[anchor = south east,yshift=-0.425em] at (axis cs: 400,520) { max. write };
-  \node[anchor = north east,yshift=-0.425em] at (axis cs: 300,670) { max. read };
+  \node[anchor = south east,yshift=-0.425em] at (axis cs: 100,520) { max. write };
+  \node[anchor = north east,yshift=-0.425em] at (axis cs: 150,670) { max. read };
 \end{pgfonlayer}
 \end{axis}
 \end{tikzpicture}
