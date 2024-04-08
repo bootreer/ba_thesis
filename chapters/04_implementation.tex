@@ -52,6 +52,13 @@ pub fn pci_map_resource(pci_addr: &str) -> Result<(*mut u8, usize), Error> {
 To enable the transfer of data between the host system and NVMe device we make use of DMA. We initialise DMA memory for all Submission and Completion Queues, as well as buffers where the device can read from and write to.
 Enabling the usage of huge pages on the operating system is done with the shell script \texttt{setup-hugetlbfs.sh} which creates a mount point for huge pages and writes a number of huge pages to \texttt{sysfs} files. Now we can allocate memory by creating the file in the newly mounted directory and memory map the file with \texttt{mmap(2)} by using the appropriate binding in the \texttt{libc} crate. We then can derive the physical memory address of the page through \texttt{/proc/self/pagemap}.
 
+\begin{figure}
+  \centering
+    \includegraphics[width=\textwidth]{figures/pagemap}
+    \caption{Fields of a pagemap entry}
+    \label{fig:pagemap}
+\end{figure}
+
 In \texttt{memory.rs} we define the struct \texttt{Dma<T>} and the function \texttt{allocate()}, which allocates a huge page and maps it to memory, and returns a struct encapsulating a virtual address to the object of type \texttt{T} and the physical address. We also define the trait \texttt{DmaSlice} with the functions \texttt{chunks()} and \texttt{slice()}, which we use for zero-copy I/O operations.
 
 \begin{lstlisting}[float, language=Rust, label=lst:virt_phys,caption=Translating a virtual address to its physical address]

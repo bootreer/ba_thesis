@@ -1,8 +1,10 @@
 \chapter{Background}\label{chapter:basics}
 
-Before getting into the details of our driver, some concepts central to any NVMe driver need to be explained in detail first. These being the specification of NVMe, how device drivers are written and operate in Linux, and our programming language of choice, Rust.
+Before getting into the details of our driver, some concepts central to any NVMe driver need to be explained in detail first. These being the PCIe communication: Memory-Mapped I/O and Direct Memory Access, the NVMe specification itself, and our programming language of choice, Rust.
 
 \section{PCIe}
+TODO
+
 \section{Memory-Mapped I/O}
 Memory-mapped I/O (MMIO) is a method of performing I/O operations between the CPU and peripheral devices with a computer. To reset and configure a NVMe drive, as well as submit new requests, we need to access its Base Address Registers (BARs); on PCIe devices, these registers are accessed through MMIO. The subsystem \texttt{uio} in Linux exposes the BARs, as well as other required interfaces in the pseudo-filesystem \texttt{sysfs}. We map the BARs into main memory as shared memory, so that changes the mapped memory are also written back to the file and vice-versa.
 
@@ -28,7 +30,7 @@ The specification supports 1 Administrative submission and completion queue pair
 \subsection{Submitting and completing requests}
 Submission and Completion Queues operate similarly to a Consumer-Producer pattern, e.g. in the case of an SQ, the host produces requests and adds them to the queue for the NVMe device to consume. Here we keep track of a $\texttt{tail}$ pointer as the producer, pointing to the next free slot and a $\texttt{head}$ pointer, pointing to the next slot to be consumed.
 
-Submitting requests to the NVMe device is done by constructing and then inserting a submission entry into the queue and updating the corresponding doorbell register to the new $\texttt{tail}$ value, notifying the NVMe device of the newly submitted request. Upon completion, the NVMe controller will post a completion entry into the Completion Queue belonging to the Submission Queue. The completion entries contain the command identifier, the status of the operation, and other command specific information (see \ref{lst:nvme_completion}). After processing the completion, the host then updates the doorbell register of the completion queue to signal that the completion entry has been acknowledged and processed. Depending on how the driver configures the NVMe controller, the device may send an interrupt signal upon completion. Each SQ and CQ has its own doorbell register.
+Submitting requests to the NVMe device is done by constructing and then inserting a submission entry into the queue and updating the corresponding doorbell register to the new $\texttt{tail}$ value, notifying the NVMe device of the newly submitted request. Upon completion, the NVMe controller will post a completion entry into the Completion Queue belonging to the Submission Queue. The completion entries contain the command identifier, the status of the operation, and other command specific information. After processing the completion, the host then updates the doorbell register of the completion queue to signal that the completion entry has been acknowledged and processed. Depending on how the driver configures the NVMe controller, the device may send an interrupt signal upon completion. Each SQ and CQ has its own doorbell register.
 
 \begin{figure}
   \centering
@@ -40,7 +42,7 @@ Submitting requests to the NVMe device is done by constructing and then insertin
 
 For reading and writing depending on I/O size different data pointers are passed to the command. The addresses passed to the data pointers are called Physical Region Page (PRP), which is nothing more than a pointer to a physical memory page. There exists another data structure for describing data buffers called Scatter Gather Lists (SGL), however these are not supported by all NVMe SSD's while PRPs are.
 
-For I/O operations less or equal to one page size (by default 4 KiB) we pass the physical address to \texttt{d\_ptr[0]}. For requests up to two pages in size, we set \texttt{d\_ptr[0]} to the physical address and \texttt{d\_ptr[1]} to the address of the second block of data, e.g. \texttt{d\_ptr[0] + page\_size} for contiguous memory. Once the I/O operation spans more than two pages, a pointer to a PRP list is passed to \texttt{d\_ptr[1]}.
+For I/O operations less or equal to one page size (by default 4 KiB) we pass the physical address to Data pointer 1 (\texttt{d\_ptr[0]}). For requests up to two pages in size, we set \texttt{d\_ptr[0]} to the physical address and Data pointer 2 (\texttt{d\_ptr[1]}) to the address of the second block of data, e.g. \texttt{d\_ptr[0] + nvme\_page\_size} for contiguous memory. Once the I/O operation spans more than two pages, a pointer to a PRP list is passed to \texttt{d\_ptr[1]}. A PRP list is a list of PRP entries, where the last entry points to the next PRP list.
 
 \begin{figure}
   \centering
@@ -79,8 +81,6 @@ For I/O operations less or equal to one page size (by default 4 KiB) we pass the
 %     pub status: u16, // Status field
 % } // 16 bytes
 % \end{lstlisting}
-
-
 
 \section{Rust}
 While \texttt{C} remains the language used for the Linux kernel, it isn't necessarily the ideal language for driver development. In 2017, Cutler et al. analysed bugs in the Linux kernel which enabled arbitrary code execution and found out of 65, 40 bugs stemmed from invalid memory accesses, such as use-after-frees \cite{cutler}; it was found that 39 of these bugs stemmed from device drivers \cite{driver_lang}. Memory bugs remain amongst the most exploited vulnerabilities\footnote{\url{https://cwe.mitre.org/top25/archive/2023/2023_kev_list.html}}, and companies such as Google have begun to transition towards the use of memory-safe languages from \texttt{C} and \texttt{C++}.

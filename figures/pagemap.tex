@@ -1,0 +1,38 @@
+\documentclass[border={40pt, 10pt, 40pt, 50pt}]{standalone}
+\usepackage{amsmath,amsfonts,amsthm}
+\usepackage{tumcolor}
+\usepackage{bytefield}
+\usepackage{rotating}
+
+
+\begin{document}
+\newcommand{\bitlabel}[2]{%
+  \bitbox[]{#1}{%
+    \raisebox{0pt}[4ex][0pt]{%
+      \turnbox{45}{\fontsize{7}{7}\selectfont#2}%
+      }%
+      }%
+      }
+
+\begin{bytefield}[
+  ]{64}
+  \bitlabel{55}{} &
+  \bitlabel{1}{pte is soft-dirty} &
+  \bitlabel{1}{page exclusively mapped} &
+  \bitlabel{4}{} &
+  \bitlabel{1}{file-page or shared-anon}
+  \bitlabel{1}{page swapped} &
+  \bitlabel{1}{page present} \\
+  \bitheader{0,54,63} \\
+  \bitbox{55}{Page Frame Number} & 
+  \bitbox{1}{} &
+  \bitbox{1}{} &
+  \bitbox{4}{zero} &
+  \bitbox{1}{} &
+  \bitbox{1}{} &
+  \bitbox{1}{}
+  % \bitbox{1}{{\rotatebox{90}{\tiny page swapped}}} &
+  % \bitbox{1}{{\rotatebox{90}{\tiny page present}}} &
+  \end{bytefield}
+\end{document}
+
