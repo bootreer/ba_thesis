@@ -58,4 +58,4 @@ The latter four methods take a \texttt{u8} slice, which gets copied into the \te
 
 Similar to SPDK, \texttt{NvmeDevice} can also create a submission and completion queue pair \texttt{NvmeQueuePair} with the method \texttt{create\_io\_queue\_pair()}. We enable multithreading by allowing each thread to have their own queue pair, submitting I/O requests with \texttt{submit\_io()}, which like \texttt{read()} and \texttt{write()} receives a reference to a \texttt{impl DmaSlice}. This method iterates over 8096 KiB as well and returns the number of requests added to the submission queue. It is the user's responsibility to poll for the completion of a command with \texttt{complete\_io()}, which takes the number of submissions to poll for and returns an \texttt{Option<NvmeCompletion>}.
 
-All methods also take the logical block address to be written to or read from.
+Aside from the data buffer, the user also passed the logical block address for the I/O operation. The length of data written is derived from the length of the buffer.
