@@ -59,7 +59,7 @@
 \addplot [mark=x,color=TUMDarkerBlue, thick,mark repeat*=11] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/libaio-read-cdf.csv};
 \addplot [mark=triangle*,color=TUMGreen, thick,mark repeat*=7] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/psync-read-cdf.csv};
 \addplot [mark=+,color=TUMOrange, thick,mark repeat*=20] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/vroom-read-cdf.csv};
-\addplot [mark=triangle*,color=TUMRed, thick,mark repeat*=7] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/spdk-read-cdf.csv};
+\addplot [mark=square*,color=TUMRed, thick,mark repeat*=7] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/spdk-read-cdf.csv};
 
 \addplot[mark=none,color=black!60,forget plot,dashed,thick] coordinates {
 (0,0.1)

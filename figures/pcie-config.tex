@@ -1,0 +1,33 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{amsmath,amsfonts,amsthm}
+\usepackage{tumcolor}
+\usepackage{bytefield}
+\usepackage{rotating}
+
+
+\begin{document}
+\newcommand{\bitlabel}[2]{%
+  \bitbox[]{#1}{%
+    \raisebox{0pt}[4ex][0pt]{%
+      \turnbox{45}{\fontsize{7}{7}\selectfont#2}%
+      }%
+      }%
+      }
+\begin{bytefield}[bitwidth=3em, bitheight=\widthof{"Parity Mem. Write "}]{16}
+  % \bitlabel{4}{} & \bitlabel{1}{Interrupt disable} & \bitlabel{8}{} & \bitlabel{1}{Bus Master} & \bitlabel{2}{} \\
+  \bitheader[endianness=big]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 15} \\
+  \bitbox{5}[bgcolor=lightgray]{Reserved} &
+  \bitbox{1}{\rotatebox{90}{Interrupt disable}} & 
+  \bitbox{1}[bgcolor=lightgray]{\rotatebox{90}{Fast Back to Back}} &
+  \bitbox{1}[bgcolor=lightgray]{\rotatebox{90}{SERR\# Enable}} &
+  \bitbox{1}[bgcolor=lightgray]{\rotatebox{90}{Wait Cycle Control}} &
+  \bitbox{1}[bgcolor=lightgray]{\rotatebox{90}{Parity Err. Response}} &
+  \bitbox{1}[bgcolor=lightgray]{\rotatebox{90}{Palette Snoop}} &
+  \bitbox{1}[bgcolor=lightgray]{\rotatebox{90}{Postable Mem. Write}} &
+  \bitbox{1}[bgcolor=lightgray]{\rotatebox{90}{Special Cycle}} &
+  \bitbox{1}{\rotatebox{90}{Bus Master}} &
+  \bitbox{1}[bgcolor=lightgray]{\rotatebox{90}{Memory Space}} &
+  \bitbox{1}[bgcolor=lightgray]{\rotatebox{90}{I/O Space}} &
+\end{bytefield}
+\end{document}
+

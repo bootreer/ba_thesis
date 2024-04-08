@@ -1,6 +1,24 @@
 \chapter{Implementation}\label{chapter:implementation}
+
+\section{Device drivers in Linux}
+In the Linux operating system, device drivers play a pivotal role in the management and operation of hardware. They serve as the interface between the hardware and the software, allowing the operating system and applications that run on it to interact with hardware components without needing to understand the details of how the hardware operates. This abstraction is vital for the development of a stable, portable, and scalable operating system.
+
+Linux drivers interact with the kernel and hardware through a set of predefined kernel functions. This interface abstracts away the complexities of the hardware and provides a consistent programming interface for driver developers. A driver typically registers itself with the kernel to handle specific hardware device IDs, and the kernel then calls into the driver when the application or system requires operations on this device. The operations a driver can perform include initialisation, reading data from or writing data to the device, and handling interrupts triggered by the hardware.
+
+Drivers developed for Linux are traditionally written in C, which offers the performance and low-level system access necessary for interacting with hardware. However, the growing ecosystem around the Rust programming language, known for its focus on safety and concurrency, has begun to make inroads into areas traditionally dominated by C, including device driver development.
+
+
+\subsection{Kernel space}
+One of the fundamental concepts in Linux and Unix-like operating systems is the division between user space and kernel space. This division is crucial for system security and stability.
+
+Being a monolithic kernel, Linux's operating system runs entirely in kernel space, meaning it has complete access to the hardware and can execute any CPU instruction and access any memory address. Kernel space is highly protected because faults here can cause the entire system to crash. Device drivers primarily operate in kernel space, allowing them to directly control hardware and execute privileged operations necessary for their tasks. For user space applications, Linux offers multiple APIs to access block devices, these being the standard file I/O API \texttt{read()}/\texttt{write()}, \texttt{libaio}, and \texttt{io\_uring}, the latter two enabling asynchronous read and write operations to block devices.
+
+\subsection{User space}
+An alternative approach to kernel space device drivers is a driver that runs entirely in user space; SPDK\footnote{\url{https://spdk.io}} being the de-facto standard for NVMe devices. The driver is able to access the device after memory mapping device files from user space. This design offers more flexibility, simplicity, and stability over kernel drivers, with access to debugging tools and overall less restrictions the development of user space drivers is much easier and the ability to use any programming language is also guaranteed. User space drivers are also less likely to cause system crashes or kernel panics due to bugs; faults in user space can often be handled gracefully, improving overall system stability. By avoiding context switches, these drivers can reduce overall latency and throughput. SPDK for example, relies on a poll-based architecture rather than interrupt-based.
+
+Given these advantages, we chose to develop a user space NVMe driver rather than kernel space.
+
 \section{Memory-Mapped I/O}\label{section:MMIO}
-Memory-mapped I/O (MMIO) is a method of performing I/O operations between the CPU and peripheral devices with a computer. To reset and configure a NVMe drive, as well as submit new requests, we need to access its Base Address Registers (BARs); on PCIe devices, these registers are accessed through MMIO. The subsystem \texttt{uio} in Linux exposes the BARs, as well as other required interfaces in the pseudo-filesystem \texttt{sysfs}. We map the BARs into main memory as shared memory, so that changes the mapped memory are also written back to the file and vice-versa.
 
 In our code, mapping the BARs to main memory is done by the function \texttt{pci\_map\_resource()} (see \autoref{lst:mmap}) in \texttt{pci.rs}. Here, we open the \texttt{resource0} file with read and write access and pass the file descriptor and its length to \texttt{libc::map}. As \texttt{libc::mmap} directly calls \texttt{mmap(2)}, the function call is wrapped in an \texttt{unsafe} block. If the function returns a null pointer or the length of the file is 0, we return an error, otherwise the pointer and the length of the file are returned as a pair.
 
@@ -31,12 +49,14 @@ pub fn pci_map_resource(pci_addr: &str) -> Result<(*mut u8, usize), Error> {
 \end{lstlisting}
 
 \section{Direct Memory Access}
-To enable the transfer of data between the host system and NVMe device we make use of direct memory access (DMA). We initialise DMA memory for all Submission and Completion Queues, as well as buffers where the device can read from and write to. As the NVMe device operates independently of the CPU accesssing memory via physical addresses, we require the DMA buffers stays in main memory. We can use \texttt{mlock(2)} to guarantee a memory page is in main memory, however the mapping is not static for 4 KiB pages, the standard page size on Linux. Instead, we make use of 2 MiB huge pages for this, where the physical addresses are pinned, due to Linux not implementing page migration on 2 MiB huge pages \cite{user_space_net}.
-
+To enable the transfer of data between the host system and NVMe device we make use of DMA. We initialise DMA memory for all Submission and Completion Queues, as well as buffers where the device can read from and write to.
 Enabling the usage of huge pages on the operating system is done with the shell script \texttt{setup-hugetlbfs.sh} which creates a mount point for huge pages and writes a number of huge pages to \texttt{sysfs} files. Now we can allocate memory by creating the file in the newly mounted directory and memory map the file with \texttt{mmap(2)} by using the appropriate binding in the \texttt{libc} crate. We then can derive the physical memory address of the page through \texttt{/proc/self/pagemap}.
 
 In \texttt{memory.rs} we define the struct \texttt{Dma<T>} and the function \texttt{allocate()}, which allocates a huge page and maps it to memory, and returns a struct encapsulating a virtual address to the object of type \texttt{T} and the physical address. We also define the trait \texttt{DmaSlice} with the functions \texttt{chunks()} and \texttt{slice()}, which we use for zero-copy I/O operations.
 
+\begin{lstlisting}[float, language=Rust, label=lst:virt_phys,caption=Translating a virtual address to its physical address]
+
+\end{lstlisting}
 % \section{Architecture}
 
 \section{Driver initialisation}

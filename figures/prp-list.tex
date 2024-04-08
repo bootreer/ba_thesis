@@ -1,0 +1,157 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{amsmath,amsfonts,amsthm}
+\usepackage{tumcolor}
+\usepackage{tikz}
+\usetikzlibrary{shapes}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+
+\pgfplotsset{set layers}% using layers
+\begin{document}
+  \begin{tikzpicture}% [stack/.style={rectangle split, rectangle split parts=#1, draw, anchor=center}]
+  \node[
+  name=dptr,
+  rectangle split,
+  rectangle split parts=2, 
+  draw, 
+  font=\small, 
+  rectangle split part align={center}, 
+  minimum width=4.2cm, 
+  minimum height=7ex,
+  fill=white
+  ]  {
+      \nodepart{one}PRP 1
+      \nodepart{two}PRP 2
+      };
+    \coordinate (above1) at ($ (dptr.north) + (0,0.25) $);
+    \coordinate (above2) at ($ (dptr.north) + (0,0.5) $);
+    \coordinate (above3) at ($ (dptr.north) + (0,0.75) $);
+
+    \coordinate (below1) at ($ (dptr.south) - (0,0.25) $);
+    \coordinate (below2) at ($ (dptr.south) - (0,0.5) $);
+    \coordinate (below3) at ($ (dptr.south) - (0,0.75) $);
+
+
+    \draw (dptr.one west) node[anchor=east] {\texttt{d\_ptr[0]}};
+    \draw (dptr.two west) node[anchor=east] {\texttt{d\_ptr[1]}};
+    \draw (above1) node[circle,fill,inner sep=0.75pt]{};
+    \draw (above2) node[circle,fill,inner sep=0.75pt]{};
+    \draw (above3) node[circle,fill,inner sep=0.75pt]{};
+
+    \draw (below1) node[circle,fill,inner sep=0.75pt]{};
+    \draw (below2) node[circle,fill,inner sep=0.75pt]{};
+    \draw (below3) node[circle,fill,inner sep=0.75pt]{};
+
+
+
+  \begin{pgfonlayer}{axis background}
+    \coordinate (dptr-back) at ($ (dptr.center) - (0.75,0) $);
+    	\node[
+        rectangle,
+        draw,
+      	minimum width = 6cm,
+        minimum height = 4cm,
+        fill = TUMLighterBlue
+      ] (nvme) at (dptr-back) {};
+    \draw (nvme.north) node[anchor=north] {NVMe Command};
+  \end{pgfonlayer}
+
+  \coordinate (pages) at ($ (nvme.west) + (12,0) $);
+  \node[
+  name=asdf,
+  rectangle split,
+  rectangle split parts=4, 
+  draw, 
+  font=\small, 
+  rectangle split part align={center}, 
+  minimum width=2cm, 
+  minimum height=7ex,
+  fill=white
+    ] at (pages) {
+      \nodepart{one}Page 1
+      \nodepart{two}Page 2
+      \nodepart{three}Page 3
+      \nodepart{four}Page 4
+      };
+
+    \coordinate (below1p) at ($ (asdf.south) - (0,0.25) $);
+    \coordinate (below2p) at ($ (asdf.south) - (0,0.5) $);
+    \coordinate (below3p) at ($ (asdf.south) - (0,0.75) $);
+    \draw (below1p) node[circle,fill,inner sep=0.75pt]{};
+    \draw (below2p) node[circle,fill,inner sep=0.75pt]{};
+    \draw (below3p) node[circle,fill,inner sep=0.75pt]{};
+
+  \draw [->] (dptr.one east) -- +(1.5,0)|- (asdf.one west);
+
+  \coordinate (prp) at ($ (nvme.south) - (0,2) $);
+  \node[
+  name=prplist,
+  rectangle split,
+  rectangle split parts=4, 
+  draw, 
+  font=\small, 
+  rectangle split part align={center}, 
+  minimum width=2cm, 
+  minimum height=7ex,
+  fill=white
+] at (prp) {
+      \nodepart{one}PRP Entry 1
+      \nodepart{two}PRP Entry 2
+      \nodepart{three}...
+      \nodepart{four}PRP Entry n
+  };
+
+  \coordinate (prp-b) at ($ (nvme.south) - (0,0.5) $);
+  \coordinate (prp-a) at ($ (nvme.south east) + (0.853,-0.5) $);
+  \coordinate (prp-north) at ($ (prplist.north) + (0,0.05) $);
+
+  \draw [-<] (dptr.two east) -- +(1,0) -- (prp-a) -- (prp-b) |- (prp-north);
+  \draw [->] (prplist.one east) -- +(4,0) |- (asdf.two west);
+  \draw [->] (prplist.two east) -- +(5,0) |- (asdf.three west);
+
+  \coordinate (prp2) at ($ (prplist.south) - (0,2) $);
+  \node[
+  name=prplist2,
+  rectangle split,
+  rectangle split parts=4, 
+  draw, 
+  font=\small, 
+  rectangle split part align={center}, 
+  minimum width=2cm, 
+  minimum height=7ex,
+  fill=white
+] at (prp2) {
+      \nodepart{one}PRP Entry 1
+      \nodepart{two}PRP Entry 2
+      \nodepart{three}...
+      \nodepart{four}PRP Entry n
+  };
+  \draw[->] (prplist.four south) -- (prplist2.north);
+
+  \draw (prplist.west) node[anchor=east] {PRP List 1};
+  \draw (prplist2.west) node[anchor=east] {PRP List 2};
+
+  \coordinate (prp3) at ($ (prplist2.east) + (4,0) $);
+  \coordinate (prpn) at ($ (prplist2.east) + (8,0) $);
+  \node[
+  name=prplist3,
+  rectangle,
+  draw, 
+  minimum width=2cm,
+  minimum height=12.5ex,
+  fill=white
+] at (prpn) {PRP List n};
+
+  \draw (prp3) node[] {...};
+  \coordinate (prp3west) at ($ (prp3) - (0.5,0) $);
+  \coordinate (prp3east) at ($ (prp3) + (0.5,0) $);
+
+  \draw [-] (prplist2.four east) -- +(1.5,0) |- (prp3west);
+  \draw [->] (prp3east) -- +(1.5,0) |- (prplist3.west);
+
+  \end{tikzpicture}
+\end{document}
+

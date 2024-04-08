@@ -1,0 +1,32 @@
+\documentclass[border=10pt]{standalone}
+\usepackage{amsmath,amsfonts,amsthm}
+\usepackage{tumcolor}
+\usepackage{bytefield}
+
+
+\begin{document}
+\newcommand{\bitlabel}[2]{%
+  \bitbox[]{#1}{%
+    \raisebox{0pt}[4ex][0pt]{%
+      \turnbox{45}{\fontsize{7}{7}\selectfont#2}%
+      }%
+      }%
+      }
+      \begin{bytefield}{32}
+        % \wordbox{1}{A 16-bit field} \\
+        \bitheader{0,7,8,15,16,31} \\
+        \bitbox{8}{Opcode} & \bitbox{8}{Flags} & \bitbox{16}{Command ID} \\
+        \wordbox{1}{Namespace ID} \\
+        \wordbox{2}{Reserved} \\
+        \wordbox{2}{Metadata pointer} \\
+        \wordbox{2}{Data pointer 1} \\
+        \wordbox{2}{Data pointer 2} \\
+        \wordbox{1}{Command dword 10} \\
+        \wordbox{1}{Command dword 11} \\
+        \wordbox{1}{Command dword 12} \\
+        \wordbox{1}{Command dword 13} \\
+        \wordbox{1}{Command dword 14} \\
+        \wordbox{1}{Command dword 15} \\
+      \end{bytefield}
+\end{document}
+

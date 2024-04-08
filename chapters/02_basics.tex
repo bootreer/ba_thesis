@@ -2,6 +2,18 @@
 
 Before getting into the details of our driver, some concepts central to any NVMe driver need to be explained in detail first. These being the specification of NVMe, how device drivers are written and operate in Linux, and our programming language of choice, Rust.
 
+\section{PCIe}
+\section{Memory-Mapped I/O}
+Memory-mapped I/O (MMIO) is a method of performing I/O operations between the CPU and peripheral devices with a computer. To reset and configure a NVMe drive, as well as submit new requests, we need to access its Base Address Registers (BARs); on PCIe devices, these registers are accessed through MMIO. The subsystem \texttt{uio} in Linux exposes the BARs, as well as other required interfaces in the pseudo-filesystem \texttt{sysfs}. We map the BARs into main memory as shared memory, so that changes the mapped memory are also written back to the file and vice-versa.
+
+\section{Direct Memory Access}
+Passing data between hosts and PCIe devices typically is done through the use of ``Direct Memory Access''(DMA); this allows peripheral devices to initiate accesses to main memory independently of the CPU. Enabling DMA needs to be done explicitly by setting the ``Bus Master'' bit to 1 in the PCI configuration space.
+
+As PCIe devices accesss memory via physical addresses, we require the buffers we use for DMA to stay in main memory. We can use \texttt{mlock(2)} to guarantee a memory page is locked in main memory, however the mapping is not static for 4 KiB pages, the standard page size on Linux. Instead, we make use of 2 MiB huge pages for this, where the physical addresses are pinned due to Linux not implementing page migration on 2 MiB huge pages \cite{user_space_net}.
+
+Figuring out the physical address our memory mapped page is located at is done by examing the process page tables in \texttt{/proc/self/pagemap}.
+
+
 \section{Non-Volatile Memory Express}
 Non-Volatile Memory Express (NVMe) itself ``is an open collection of standards and information to fully expose [\ldots] non-volatile memory in all types of computer environments''\footnote{\url{https://nvmexpress.org/about/}}. Relevant to the thesis is the NVMe specification, an open logical device interface specification for accessing non-volatile storage media attached via the PCIe bus. NVMe was designed to capitilise on the low latency and parallelism of SSDs, providing improvements over older storage interfaces such as SATA or SAS in terms of speed and latency. This specification defines several key components:
 \begin{itemize}
@@ -10,24 +22,6 @@ Non-Volatile Memory Express (NVMe) itself ``is an open collection of standards a
         \item \textbf{Completion Queues (CQ)}: The NVMe device places completion entries noticing that commands have to processed. Each completion queue is associated with a submission queue, however the specification allows multiple submission queues to be associated with a single completion queue.
 \end{itemize}
 
-\begin{lstlisting}[float,language=Rust,label=lst:nvme_command,caption=NVMe command defined as a struct in Rust]
-#[repr(packed)]
-pub struct NvmeCommand {
-    pub opcode: u8,        // Command opcode
-    pub flags: u8,
-    pub c_id: u16,         // Command ID
-    pub ns_id: u32,        // Namespace ID
-    pub _rsvd: u64,        // Reserved
-    pub md_ptr: u64,       // Metadata pointer
-    pub d_ptr: [u64; 2],   // Data pointers
-    pub cdw10: u32,        // Command dwords; usage is command specific
-    pub cdw11: u32,
-    pub cdw12: u32,
-    pub cdw13: u32,
-    pub cdw14: u32,
-    pub cdw15: u32,
-} // 64 bytes
-\end{lstlisting}
 
 The specification supports 1 Administrative submission and completion queue pair and up to 65535 I/O submission and completion queues, allowing for high scalability and the ability to handle high volumes of I/O requests. Both the submission and completion queue operate as ring buffers, supporting up to 65536 entries and 65535 outstanding requests. Due to the command identifier being 16 bits in size, the NVMe controller in total supports up to 65536 outstanding requests at a time.
 
@@ -36,47 +30,57 @@ Submission and Completion Queues operate similarly to a Consumer-Producer patter
 
 Submitting requests to the NVMe device is done by constructing and then inserting a submission entry into the queue and updating the corresponding doorbell register to the new $\texttt{tail}$ value, notifying the NVMe device of the newly submitted request. Upon completion, the NVMe controller will post a completion entry into the Completion Queue belonging to the Submission Queue. The completion entries contain the command identifier, the status of the operation, and other command specific information (see \ref{lst:nvme_completion}). After processing the completion, the host then updates the doorbell register of the completion queue to signal that the completion entry has been acknowledged and processed. Depending on how the driver configures the NVMe controller, the device may send an interrupt signal upon completion. Each SQ and CQ has its own doorbell register.
 
+\begin{figure}
+  \centering
+    \includegraphics[width=\textwidth]{figures/nvme-queue}
+    \caption{Example queue and structure of the NVMe submission entry}
+    \label{fig:nvme-queue}
+\end{figure}
+
+
 For reading and writing depending on I/O size different data pointers are passed to the command. The addresses passed to the data pointers are called Physical Region Page (PRP), which is nothing more than a pointer to a physical memory page. There exists another data structure for describing data buffers called Scatter Gather Lists (SGL), however these are not supported by all NVMe SSD's while PRPs are.
 
 For I/O operations less or equal to one page size (by default 4 KiB) we pass the physical address to \texttt{d\_ptr[0]}. For requests up to two pages in size, we set \texttt{d\_ptr[0]} to the physical address and \texttt{d\_ptr[1]} to the address of the second block of data, e.g. \texttt{d\_ptr[0] + page\_size} for contiguous memory. Once the I/O operation spans more than two pages, a pointer to a PRP list is passed to \texttt{d\_ptr[1]}.
 
-TODO: tikz graphic?
+\begin{figure}
+  \centering
+    \includegraphics[width=\textwidth]{figures/prp-list}
+    \caption{Visualisation of the PRP lists in NVMe commands}
+    \label{fig:prp-list}
+\end{figure}
+
+% \begin{lstlisting}[float,language=Rust,label=lst:nvme_command,caption=NVMe command defined as a struct in Rust]
+% #[repr(packed)]
+% pub struct NvmeCommand {
+%     pub opcode: u8,        // Command opcode
+%     pub flags: u8,
+%     pub c_id: u16,         // Command ID
+%     pub ns_id: u32,        // Namespace ID
+%     pub _rsvd: u64,        // Reserved
+%     pub md_ptr: u64,       // Metadata pointer
+%     pub d_ptr: [u64; 2],   // Data pointers
+%     pub cdw10: u32,        // Command dwords; usage is command specific
+%     pub cdw11: u32,
+%     pub cdw12: u32,
+%     pub cdw13: u32,
+%     pub cdw14: u32,
+%     pub cdw15: u32,
+% } // 64 bytes
+% \end{lstlisting}
+
+% \begin{lstlisting}[float,language=Rust,label=lst:nvme_completion,caption=NVMe completion entry defined as a struct in Rust]
+% #[repr(packed)]
+% pub struct NvmeCompletion {
+%     pub command_specific: u32,
+%     pub _rsvd: u32, // Reserved
+%     pub sq_head: u16, // Submission Queue head
+%     pub sq_id: u16, // Submission Queue ID
+%     pub c_id: u16, // Command ID
+%     pub status: u16, // Status field
+% } // 16 bytes
+% \end{lstlisting}
 
 
-\begin{lstlisting}[float,language=Rust,label=lst:nvme_completion,caption=NVMe completion entry defined as a struct in Rust]
-#[repr(packed)]
-pub struct NvmeCompletion {
-    pub command_specific: u32,
-    pub _rsvd: u32, // Reserved
-    pub sq_head: u16, // Submission Queue head
-    pub sq_id: u16, // Submission Queue ID
-    pub c_id: u16, // Command ID
-    pub status: u16, // Status field
-} // 16 bytes
-\end{lstlisting}
-
-
-\section{Device drivers in Linux}
-In the Linux operating system, device drivers play a pivotal role in the management and operation of hardware. They serve as the interface between the hardware and the software, allowing the operating system and applications that run on it to interact with hardware components without needing to understand the details of how the hardware operates. This abstraction is vital for the development of a stable, portable, and scalable operating system.
-
-Linux drivers interact with the kernel and hardware through a set of predefined kernel functions. This interface abstracts away the complexities of the hardware and provides a consistent programming interface for driver developers. A driver typically registers itself with the kernel to handle specific hardware device IDs, and the kernel then calls into the driver when the application or system requires operations on this device. The operations a driver can perform include initialisation, reading data from or writing data to the device, and handling interrupts triggered by the hardware.
-
-Drivers developed for Linux are traditionally written in C, which offers the performance and low-level system access necessary for interacting with hardware. However, the growing ecosystem around the Rust programming language, known for its focus on safety and concurrency, has begun to make inroads into areas traditionally dominated by C, including device driver development.
-
-
-\subsection{Kernel space}
-One of the fundamental concepts in Linux and Unix-like operating systems is the division between user space and kernel space. This division is crucial for system security and stability.
-
-Being a monolithic kernel, Linux's operating system runs entirely in kernel space, meaning it has complete access to the hardware and can execute any CPU instruction and access any memory address. Kernel space is highly protected because faults here can cause the entire system to crash. Device drivers primarily operate in kernel space, allowing them to directly control hardware and execute privileged operations necessary for their tasks. For user space applications, Linux offers multiple APIs to access block devices, these being the standard file I/O API \texttt{read()}/\texttt{write()}, \texttt{libaio}, and \texttt{io\_uring}, the latter two enabling asynchronous read and write operations to block devices.
-
-With the use of \texttt{libaio} applications can access block devices asynchrounously. This centers around the two system calls \texttt{io\_submit()} and \texttt{io\_getevents()}. As the names suggest, the former submits I/O requests to the kernel, while the latter is responsible for retrieving I/O completions. With two system calls required per request, there comes significant overhead from context switches, with data being copied from kernel to user space and vice versa.
-
-\texttt{io\_uring} on the other hand ``implements a shared memory-mapped, queue-driven request/response processing framework'' \cite{storage_api} by implementing a submission and completion ring which is mapped into user space and shared with the kernel. Applications can add submissions to the submission ring without any system calls, however by default notifies the kernel about new entries in the ring with \texttt{io\_uring\_enter()}, similar to updating the submission queue doorbell in the NVMe specification. As the completion queue is mapped into user space, it is also possible to poll for command completions by polling for new entries in the completion ring; or alternatively wait for new completions with \texttt{io\_uring\_enter()}.
-
-\subsection{User space}
-An alternative approach to kernel space device drivers is a driver that runs entirely in user space; SPDK\footnote{\url{https://spdk.io}} being the de-facto standard for NVMe devices. The driver is able to access the device after memory mapping device files from user space. This design offers more flexibility, simplicity, and stability over kernel drivers, with access to debugging tools and overall less restrictions the development of user space drivers is much easier and the ability to use any programming language is also guaranteed. User space drivers are also less likely to cause system crashes or kernel panics due to bugs; faults in user space can often be handled gracefully, improving overall system stability. By avoiding context switches, these drivers can reduce overall latency and throughput. SPDK for example, relies on a poll-based architecture rather than interrupt-based.
-
-Given these advantages, we chose to develop a user space NVMe driver rather than kernel space.
 
 \section{Rust}
 While \texttt{C} remains the language used for the Linux kernel, it isn't necessarily the ideal language for driver development. In 2017, Cutler et al. analysed bugs in the Linux kernel which enabled arbitrary code execution and found out of 65, 40 bugs stemmed from invalid memory accesses, such as use-after-frees \cite{cutler}; it was found that 39 of these bugs stemmed from device drivers \cite{driver_lang}. Memory bugs remain amongst the most exploited vulnerabilities\footnote{\url{https://cwe.mitre.org/top25/archive/2023/2023_kev_list.html}}, and companies such as Google have begun to transition towards the use of memory-safe languages from \texttt{C} and \texttt{C++}.
