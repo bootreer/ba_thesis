@@ -2,16 +2,16 @@
 
 Before getting into the details of our driver, some concepts central to any NVMe driver need to be explained in detail first: how communicating with PCIe devices works with Memory-Mapped I/O and Direct Memory Access, the NVMe specification itself, and our programming language of choice, Rust.
 
-\section{PCIe}
+\section{PCI}
 TODO: chatgpt and inshallah
 
 \section{Memory-Mapped I/O}
-Memory-mapped I/O (MMIO) is a method of performing I/O operations between the CPU and peripheral devices with a computer. To reset and configure a NVMe drive, as well as submit new requests, we need to access its Base Address Registers (BARs); on PCIe devices, these registers are accessed through MMIO. The subsystem \texttt{uio} in Linux exposes the BARs, as well as other required interfaces in the pseudo-filesystem \texttt{sysfs}. We map the BARs into main memory as shared memory, so that changes the mapped memory are also written back to the file and vice-versa.
+Memory-mapped I/O (MMIO) is a method of performing I/O operations between the CPU and peripheral devices with a computer. Configuring and accessing PCIe devices usually requires accessing its Base Address Registers (BARs) and memory; on PCIe devices, these are accessed through MMIO. The subsystem \texttt{uio} in Linux exposes the BARs, as well as other required interfaces as files in the pseudo-filesystem \texttt{sysfs}, which we map the BARs into main memory with \texttt{mmap(2)}. These are mapped as shared memory, so changes to the mapped memory are also written back to the file and vice-versa.
 
 \section{Direct Memory Access}
 Passing data between hosts and PCIe devices typically is done through the use of ``Direct Memory Access''(DMA); this allows peripheral devices to initiate accesses to main memory independently of the CPU. Enabling DMA needs to be done explicitly by setting the ``Bus Master'' bit to 1 in the PCI configuration space.
 
-As PCIe devices accesss memory via physical addresses, we require the buffers we use for DMA to stay in main memory. We can use \texttt{mlock(2)} to guarantee a memory page is locked in main memory, however the mapping is not static for 4 KiB pages, the standard page size on Linux. Instead, we make use of 2 MiB huge pages for this, where the physical addresses are pinned due to Linux not implementing page migration on 2 MiB huge pages \cite{user_space_net}.
+As PCIe devices access memory via physical addresses independently of the CPU, we require the buffers we use for DMA to stay in main memory. We can use \texttt{mlock(2)} to guarantee a memory page is locked in main memory, however the mapping is not static for 4 KiB pages, the standard page size on Linux. Instead, we make use of 2 MiB huge pages for this, where the physical addresses are pinned due to Linux not implementing page migration on 2 MiB huge pages \cite{user_space_net}.
 
 Figuring out the physical address our memory mapped page is located at is done by examining the process page tables in the process' pagemap.
 
