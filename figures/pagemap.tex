@@ -15,6 +15,7 @@
       }
 
 \begin{bytefield}[
+    bitwidth=0.75em, bitheight=25pt
   ]{64}
   \bitlabel{55}{} &
   \bitlabel{1}{pte is soft-dirty} &
@@ -24,10 +25,10 @@
   \bitlabel{1}{page swapped} &
   \bitlabel{1}{page present} \\
   \bitheader{0,54,63} \\
-  \bitbox{55}{Page Frame Number} & 
+  \bitbox{55}{\large Page Frame Number} & 
   \bitbox{1}{} &
   \bitbox{1}{} &
-  \bitbox{4}{zero} &
+  \bitbox{4}{\large zero} &
   \bitbox{1}{} &
   \bitbox{1}{} &
   \bitbox{1}{}
