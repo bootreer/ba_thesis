@@ -31,11 +31,11 @@
     \draw (base-ad) node[anchor=east] {base address};
     \coordinate (head) at ($ (a.three west) + (-1,0) $);
     \draw (head) node[anchor=east] {head};
-    \coordinate (tail) at ($ (a.seven west) + (-1,0) $);
+    \coordinate (tail) at ($ (a.eight west) + (-1,0) $);
     \draw (tail) node[anchor=east] {tail};
     \draw[->] (base-ad) -- (a.north west);
     \draw[->] (head) -- (a.three west);
-    \draw[->] (tail) -- (a.seven west);
+    \draw[->] (tail) -- (a.eight west);
 
     \coordinate (nvme) at ($ (a.west) + (12,0) $);
     \node (sub-entry) at (nvme) {\includegraphics[width=0.69\textwidth]{nvme-command}};

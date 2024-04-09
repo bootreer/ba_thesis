@@ -39,7 +39,9 @@ To investigate the effects the number of threads and queue depth (QD) have on th
 
 Observing how the number of threads impact the throughput in \autoref{fig:vroom-iops-thread}, we see the throughput double each time we double the number of threads until 16 threads, afterwards we see gains are smaller. With a queue depth of 32, we see an increase in throughput until 8 threads, after which the throughput plateaus at around 460 KIOPS.
 
-When increasing the queue depth, we notice a similar growth where the IOPS doubles each time the queue depth doubles in size until QD16, however at QD64 the throughput is higher than at 64 threads by approx. 80 KIOPS. Increasing queue depth seems to lead to slightly better performance than increasing the threads when comparing ``queue depths'', i.e. QD32T4 ($\approx$ QD128$=32 \cdot 4$)) has a lower throughput than QD128T1.
+When increasing the queue depth, we notice a similar growth where the IOPS doubles each time the queue depth doubles in size until QD16, however at QD64 the throughput is higher than at 64 threads by approx. 80 KIOPS. By increasing queue depth, we also achieve a higher throughput than when increasing threads with a queue depth of 32. Here we reach a plateau with a queue depth of 256 with a throughput of around 480 KIOPS. With the Samsung SSD, there is no need to implement queues deeper than 256.
+
+Increasing queue depth leads to better performance than increasing the threads when comparing ``queue depths'', i.e. QD32T4 ($\approx$ QD128$=32 \cdot 4$)) has a lower throughput than QD128T1.
 
 \begin{figure}
   \centering
