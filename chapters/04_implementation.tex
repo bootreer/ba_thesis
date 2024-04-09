@@ -97,7 +97,9 @@ The BARs of the NVMe device is then mapped into main memory, as described in \au
 fn set_reg32(&self, reg: u32, value: u32) {
     assert!(reg as usize <= self.len - 4, "memory access out of bounds");
     unsafe {
-        std::ptr::write_volatile((self.addr as usize + reg as usize) as *mut u32, value);
+      std::ptr::write_volatile(
+        (self.addr as usize + reg as usize) as *mut u32, value
+      );
     }
 }
 \end{lstlisting}
@@ -113,4 +115,4 @@ The latter four methods take a \texttt{u8} slice, which gets copied into the \te
 
 Similar to SPDK, \texttt{NvmeDevice} can also create a submission and completion queue pair \texttt{NvmeQueuePair} with the method \texttt{create\_io\_queue\_pair()}. We enable multithreading by allowing each thread to have their own queue pair, submitting I/O requests with \texttt{submit\_io()}, which like \texttt{read()} and \texttt{write()} receives a reference to a \texttt{impl DmaSlice}. This method iterates over 8096 KiB as well and returns the number of requests added to the submission queue. It is the user's responsibility to poll for the completion of a command with \texttt{complete\_io()}, which takes the number of submissions to poll for and returns an \texttt{Option<NvmeCompletion>}.
 
-Aside from the data buffer, the user also passed the logical block address for the I/O operation. The length of data written is derived from the length of the buffer.
+Aside from the data buffer, the user also passed the logical block address (LBA) for the I/O operation. The length of data written is derived from the length of the buffer.

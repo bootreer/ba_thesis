@@ -19,7 +19,7 @@ All benchmarks are run on a system with an Intel Xeon E5-2660 with 251GiB of RAM
 
 In the following sections we will compare our driver's performance with the datasheet numbers in \autoref{tab:evoplus}, as well as against other storage engines: \texttt{libaio}, \texttt{io\_uring}, SPDK and the Linux file I/O API \texttt{pread}/\texttt{pwrite} (\texttt{psync}). Each I/O engine is tested by running a read or write workload over 900 seconds, with I/O unit sizes of 4KiB.
 
-The NVMe controller is aware when a device is empty and thus processes read requests without actually performing any read operations. On an empty drive, the reported read performance will be much higher, hence all read tests are done on a full drive, i.e. each logical block address (LBA) has been written to at least once.
+The NVMe controller is aware when a device is empty and thus processes read requests without actually performing any read operations. On an empty drive, the reported read performance will be much higher, hence all read tests are done on a full drive, i.e. each LBA has been written to at least once.
 
 For writes, the SSD is cleared beforehand, such that it is in a comparable state for each test. Full NVMe SSDs report worsened write performances, due to mechanisms such as wear-levelling and write amplification, where the NVMe controller performs garbage collection and reorders data internally.
 
