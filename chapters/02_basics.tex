@@ -3,7 +3,40 @@
 Before getting into the details of our driver, some concepts central to any NVMe driver need to be explained in detail first: how communicating with PCIe devices works with Memory-Mapped I/O and Direct Memory Access, the NVMe specification itself, and our programming language of choice, Rust.
 
 \section{PCIe}
-TODO: chatgpt and inshallah
+Nowadays, all peripherals are connected to the computer over the Periphiral Component Interconnect Express (PCIe) interface. PCIe builds upon PCI and defines the specifications of how the computer and peripheral devices interact. These devices are identified by a domain number, bus number and function number. In Linux, the entire configuration space of a PCI device is exposed in the pseudo-filesystem \texttt{sysfs}. Accessing this configuration space is required to e.g. reset a device when binding to another device driver. How the configuration space is structured is depicted in \autoref{fig:pci-config}.
+
+% while the contents of a PCI device's \texttt{sysfs} directory is shown in \autoref{lst:sysfs}
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=\textwidth]{figures/pcie-config-space}
+    \caption{Structure of PCI configuration space}
+    \label{fig:pci-config}
+\end{figure}
+
+% \begin{lstlisting}[float,label=lst:sysfs,caption={Example \texttt{sysfs} directory of a PCI device with domain number 0000, bus number 17 and function 0}]
+% /sys/devices/pci0000:17
+% |-- 0000:17:00.0
+% | \
+% |   |-- class
+% |   |-- config
+% |   |-- device
+% |   |-- enable
+% |   |-- irq
+% |   |-- local_cpus
+% |   |-- remove
+% |   |-- resource
+% |   |-- resource0
+% |   |-- resource1
+% |   |-- resource2
+% |   |-- revision
+% |   |-- rom
+% |   |-- subsystem_device
+% |   |-- subsystem_vendor
+% |   |-- vendor
+% |-- ...
+% \end{lstlisting}
+
 
 \section{Memory-Mapped I/O}
 Memory-mapped I/O (MMIO) is a method of performing I/O operations between the CPU and peripheral devices with a computer. Configuring and accessing PCIe devices usually requires accessing its Base Address Registers (BARs) and memory; on PCIe devices, these are accessed through MMIO. The subsystem \texttt{uio} in Linux exposes the BARs, as well as other required interfaces as files in the pseudo-filesystem \texttt{sysfs}, which we map the BARs into main memory with \texttt{mmap(2)}. These are mapped as shared memory, so changes to the mapped memory are also written back to the file and vice-versa.
