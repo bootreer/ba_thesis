@@ -1,9 +1,9 @@
 \chapter{Background}\label{chapter:basics}
 
-Before getting into the details of our driver, some concepts central to any NVMe driver need to be explained in detail first. These being the PCIe communication: Memory-Mapped I/O and Direct Memory Access, the NVMe specification itself, and our programming language of choice, Rust.
+Before getting into the details of our driver, some concepts central to any NVMe driver need to be explained in detail first: how communicating with PCIe devices works with Memory-Mapped I/O and Direct Memory Access, the NVMe specification itself, and our programming language of choice, Rust.
 
 \section{PCIe}
-TODO
+TODO: chatgpt and inshallah
 
 \section{Memory-Mapped I/O}
 Memory-mapped I/O (MMIO) is a method of performing I/O operations between the CPU and peripheral devices with a computer. To reset and configure a NVMe drive, as well as submit new requests, we need to access its Base Address Registers (BARs); on PCIe devices, these registers are accessed through MMIO. The subsystem \texttt{uio} in Linux exposes the BARs, as well as other required interfaces in the pseudo-filesystem \texttt{sysfs}. We map the BARs into main memory as shared memory, so that changes the mapped memory are also written back to the file and vice-versa.
@@ -13,19 +13,19 @@ Passing data between hosts and PCIe devices typically is done through the use of
 
 As PCIe devices accesss memory via physical addresses, we require the buffers we use for DMA to stay in main memory. We can use \texttt{mlock(2)} to guarantee a memory page is locked in main memory, however the mapping is not static for 4 KiB pages, the standard page size on Linux. Instead, we make use of 2 MiB huge pages for this, where the physical addresses are pinned due to Linux not implementing page migration on 2 MiB huge pages \cite{user_space_net}.
 
-Figuring out the physical address our memory mapped page is located at is done by examing the process page tables in \texttt{/proc/self/pagemap}.
+Figuring out the physical address our memory mapped page is located at is done by examining the process page tables in the process' pagemap.
 
 
 \section{Non-Volatile Memory Express}
 Non-Volatile Memory Express (NVMe) itself ``is an open collection of standards and information to fully expose [\ldots] non-volatile memory in all types of computer environments''\footnote{\url{https://nvmexpress.org/about/}}. Relevant to the thesis is the NVMe specification, an open logical device interface specification for accessing non-volatile storage media attached via the PCIe bus. NVMe was designed to capitilise on the low latency and parallelism of SSDs, providing improvements over older storage interfaces such as SATA or SAS in terms of speed and latency. This specification defines several key components:
+
 \begin{itemize}
         \item \textbf{NVMe commands}: the basic units of work that the host system uses to communicate with the NVMe device. These commands may involve I/O operations or administrative tasks. These submission entries contain the command opcode, an identifier, and values pertaining to the command, e.g. data pointers for read/write operations. An example struct definition can be seen in \autoref{lst:nvme_command}.
         \item \textbf{Submission Queues (SQ)}: The host system places commands here to be processed by the NVMe device. Each NVMe device can support multiple SQs, enabling parallel command processing.
         \item \textbf{Completion Queues (CQ)}: The NVMe device places completion entries noticing that commands have to processed. Each completion queue is associated with a submission queue, however the specification allows multiple submission queues to be associated with a single completion queue.
 \end{itemize}
 
-
-The specification supports 1 Administrative submission and completion queue pair and up to 65535 I/O submission and completion queues, allowing for high scalability and the ability to handle high volumes of I/O requests. Both the submission and completion queue operate as ring buffers, supporting up to 65536 entries and 65535 outstanding requests. Due to the command identifier being 16 bits in size, the NVMe controller in total supports up to 65536 outstanding requests at a time.
+The specification supports 1 Administrative submission and completion queue pair and up to 65535 I/O submission and completion queues, in theory allowing for high scalability and the ability to handle high volumes of I/O requests. Both the submission and completion queue operate as ring buffers, supporting up to 65536 entries and 65535 outstanding requests. Due to the command identifier being 16 bits in size, the NVMe controller in total supports up to 65536 outstanding requests at a time.
 
 \subsection{Submitting and completing requests}
 Submission and Completion Queues operate similarly to a Consumer-Producer pattern, e.g. in the case of an SQ, the host produces requests and adds them to the queue for the NVMe device to consume. Here we keep track of a $\texttt{tail}$ pointer as the producer, pointing to the next free slot and a $\texttt{head}$ pointer, pointing to the next slot to be consumed.
@@ -42,7 +42,7 @@ Submitting requests to the NVMe device is done by constructing and then insertin
 
 For reading and writing depending on I/O size different data pointers are passed to the command. The addresses passed to the data pointers are called Physical Region Page (PRP), which is nothing more than a pointer to a physical memory page. There exists another data structure for describing data buffers called Scatter Gather Lists (SGL), however these are not supported by all NVMe SSD's while PRPs are.
 
-For I/O operations less or equal to one page size (by default 4 KiB) we pass the physical address to Data pointer 1 (\texttt{d\_ptr[0]}). For requests up to two pages in size, we set \texttt{d\_ptr[0]} to the physical address and Data pointer 2 (\texttt{d\_ptr[1]}) to the address of the second block of data, e.g. \texttt{d\_ptr[0] + nvme\_page\_size} for contiguous memory. Once the I/O operation spans more than two pages, a pointer to a PRP list is passed to \texttt{d\_ptr[1]}. A PRP list is a list of PRP entries, where the last entry points to the next PRP list.
+For I/O operations less or equal to one page size (by default 4 KiB) we pass the physical address to Data pointer 1 (\texttt{d\_ptr[0]}). For requests up to two pages in size, we set \texttt{d\_ptr[0]} to the physical address and Data pointer 2 (\texttt{d\_ptr[1]}) to the address of the second block of data, e.g. \texttt{d\_ptr[0] + nvme\_page\_size} for contiguous memory. Once the I/O operation spans more than two pages, a pointer to a PRP list is passed to \texttt{d\_ptr[1]}. A PRP list is a list of PRP entries, where the last entry points to the next PRP list; essentially an array of pointers.
 
 \begin{figure}
   \centering
