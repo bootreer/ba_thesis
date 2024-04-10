@@ -80,9 +80,9 @@
     \coordinate (below1p) at ($ (asdf.south) - (0,0.25) $);
     \coordinate (below2p) at ($ (asdf.south) - (0,0.5) $);
     \coordinate (below3p) at ($ (asdf.south) - (0,0.75) $);
-    \draw (below1p) node[circle,fill,inner sep=0.75pt]{};
-    \draw (below2p) node[circle,fill,inner sep=0.75pt]{};
-    \draw (below3p) node[circle,fill,inner sep=0.75pt]{};
+    \draw (below1p) node[name=dot1,circle,fill,inner sep=0.75pt]{};
+    \draw (below2p) node[name=dot2,circle,fill,inner sep=0.75pt]{};
+    \draw (below3p) node[name=dot3,circle,fill,inner sep=0.75pt]{};
 
   \draw [->] (dptr.one east) -- +(1.5,0)|- (asdf.one west);
 
@@ -134,8 +134,11 @@
   \draw (prplist.west) node[anchor=east] {PRP List 1};
   \draw (prplist2.west) node[anchor=east] {PRP List 2};
 
-  \coordinate (prp3) at ($ (prplist2.east) + (4,0) $);
-  \coordinate (prpn) at ($ (prplist2.east) + (8,0) $);
+  \draw [shorten >=0.25cm, ->] (prplist2.one east) -- +(6,0) |- (dot1.west);
+  \draw [shorten >=0.25cm, ->] (prplist2.two east) -- +(6.5,0) |- (dot2.west);
+
+  \coordinate (prp3) at ($ (prplist2.four east) + (4,0) $);
+  \coordinate (prpn) at ($ (prplist2.four east) + (8,0) $);
   \node[
   name=prplist3,
   rectangle,
