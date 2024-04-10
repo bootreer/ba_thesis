@@ -1,5 +1,5 @@
 \chapter{Conclusion}\label{c:c}
-What we have shown here is that it is very much feasible to develop a user space NVMe driver in a higher level programming language with similar performance to SPDK, while at the same time containing fewer lines of driver code overall. We reach comparable throughput speeds as SPDK, while outperforming the Linux kernel I/O APIs by avoiding the kernel altogether.
+In this thesis we have presented vroom, a novel user space, poll-based NVMe driver written in Rust. What our evalutaions have shown here is that it is very much feasible to develop a user space NVMe driver in a higher level programming language with SPDK-like performance, while at the same time containing fewer lines of driver code overall. We reach comparable throughput speeds as SPDK, while outperforming the Linux kernel I/O APIs by avoiding the kernel altogether.
 
 \paragraph{Future Work}
 There are still many aspects in the driver where optimisations can be investigated, such as the effect of prefetching pages for I/O operations, or implementing IOMMU support, so root priviledges are not required to start the driver, and measuring the performance impact it may have. Investigating the performance impacts interrupts have compared to polling, as well as comparing different interrupt methods are open topics as well.

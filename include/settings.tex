@@ -9,7 +9,7 @@
 % backend=biber, % somehow biber did not work properly with latexrun. If you find a solution, feel free to open a merge request
   backend=bibtex,
   url=false,
-  style=alphabetic,
+  style=numeric,
   maxnames=4,
   minnames=3,
   maxbibnames=99,
@@ -28,6 +28,7 @@
 \usepackage{./include/listings-rust}
 \usepackage{multirow}
 \usepackage{subcaption}
+\usepackage{siunitx}
 
 \usepackage[hidelinks, pdfusetitle]{hyperref} % hidelinks removes colored boxes around references and links
 \AtBeginDocument{

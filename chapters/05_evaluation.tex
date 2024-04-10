@@ -1,4 +1,6 @@
 \chapter{Evaluation}\label{chapter:eval}
+In this chapter we analyse the vroom's performance, i.e. throughput and latency, and compare it to other I/O engines.
+
 \section{Setup}
 All benchmarks are run on a system with an Intel Xeon E5-2660 with 251GiB of RAM running Ubuntu 23.10 with a 1TB Samsung Evo 970 Plus NVMe SSD, which has a 1GB cache; the throughput and bandwidth limits of the SSD are noted in \autoref{tab:evoplus}.
 
@@ -22,6 +24,27 @@ In the following sections we will compare our driver's performance with the data
 The NVMe controller is aware when a device is empty and thus processes read requests without actually performing any read operations. On an empty drive, the reported read performance will be much higher, hence all read tests are done on a full drive, i.e. each LBA has been written to at least once.
 
 For writes, the SSD is cleared beforehand, such that it is in a comparable state for each test. Full NVMe SSDs report worsened write performances, due to mechanisms such as wear-levelling and write amplification, where the NVMe controller performs garbage collection and reorders data internally.
+
+
+We use the Flexible I/O tester \texttt{fio}\footnote{\url{https://github.com/axboe/fio}} to test the performance capabilities of\texttt{libaio}, \texttt{io\_uring} and \texttt{psync}, and in some cases SPDK. In \autoref{fig:iops-qd1}, \autoref{fig:iops-qd32} we use numbers from SPDK's own \texttt{spdk\_perf\_tool} tool, as their \texttt{fio} plugin introduces some overhead; for \autoref{fig:ccdf}, \autoref{fig:lat-qd1} we use log files \texttt{fio} creates.
+
+We use the \texttt{fio} configuration in \autoref{lst:fio_conf}. The same parameters were used when testing with \texttt{spdk\_perf\_tool}.
+
+\begin{lstlisting}[float, label=lst:fio_conf, caption=\texttt{fio} configuration]
+  [global]
+  io_engine={spdk,io_uring,libaio,psync}
+  rw={randread,randwrite,read,write}
+  blocksize=4k
+  direct=1
+  norandommap=1
+  runtime=900
+
+  numjobs={1,4}
+  queue_depth={1,32}
+  group_reporting=1
+\end{lstlisting}
+
+Our driver, vroom, is tested using our own time-based workload simulating the same workloads started by \texttt{fio}, performing read and writes to random block aligned LBAs.
 
 \section{Throughput}
 In this section, we will analyse the throughput capabilities of our NVMe driver, and how changing parameters affects the performance.
@@ -59,26 +82,8 @@ When increasing the queue depth, we notice a similar growth where the IOPS doubl
 Increasing queue depth leads to better performance than increasing the threads when comparing ``queue depths'', i.e. QD32T4 ($\approx$ QD128$=32 \cdot 4$)) has a lower throughput than QD128T1.
 
 
-% \section{Latency}
+\section{Latency}
 
-\section{Comparison with other I/O engines}
-\texttt{libaio}, \texttt{io\_uring} and \texttt{psync}, and in some cases SPDK are tested using \texttt{fio}\footnote{\url{https://github.com/axboe/fio}} with the configuration in \autoref{lst:fio_conf}. In \autoref{fig:iops-qd1}, \autoref{fig:iops-qd32} we use numbers from SPDK's own \texttt{spdk\_perf\_tool} tool, as their \texttt{fio} plugin introduces some overhead; for \autoref{fig:ccdf}, \autoref{fig:lat-qd1} we use log files \texttt{fio} creates.
-
-We use the \texttt{fio} configuration in \autoref{lst:fio_conf}. The same parameters were used when testing with \texttt{spdk\_perf\_tool}.
-
-\begin{lstlisting}[float, label=lst:fio_conf, caption=\texttt{fio} configuration]
-  [global]
-  io_engine={spdk,io_uring,libaio,psync}
-  rw={randread,randwrite,read,write}
-  blocksize=4k
-  direct=1
-  norandommap=1
-  runtime=900
-
-  numjobs={1,4}
-  queue_depth={1,32}
-  group_reporting=1
-\end{lstlisting}
 
 \subsection{Queue depth 1}
 Here we test the single-threaded read and write performances when using a queue depth of 1, i.e. synchronous read and writes.
