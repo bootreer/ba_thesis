@@ -57,10 +57,10 @@
 ]
 % ,each nth point=100, filter discard warning=fals
 \addplot [mark=none,color=TUMBlack, thick] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/io-uring-write-cdf.csv};
-\addplot [mark=x,color=TUMDarkerBlue, thick,mark repeat*=11] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/libaio-write-cdf.csv};
-\addplot [mark=triangle*,color=TUMGreen, thick,mark repeat*=7] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/psync-write-cdf.csv};
-\addplot [mark=+,color=TUMOrange, thick,mark repeat*=20] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/vroom-write-cdf.csv};
-\addplot [mark=square*,color=TUMRed, thick,mark repeat*=11] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/spdk-write-cdf.csv};
+\addplot [mark=x,color=TUMDarkerBlue, thick,mark repeat*=110] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/libaio-write-cdf.csv};
+\addplot [mark=triangle*,color=TUMGreen, thick,mark repeat*=70] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/psync-write-cdf.csv};
+\addplot [mark=+,color=TUMOrange, thick,mark repeat*=200] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/vroom-write-cdf.csv};
+\addplot [mark=square*,color=TUMRed, thick,mark repeat*=110] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/spdk-write-cdf.csv};
 
 \addplot[mark=none,color=black!60,forget plot,dashed,thick] coordinates {
 (0,0.1)
@@ -81,8 +81,8 @@
 \begin{pgfonlayer}{axis foreground}
 \node[anchor = north east,yshift=0.25em] at (axis cs: 75.5,0.1) { 90th percentile};
 \node[anchor = north east,yshift=0.25em] at (axis cs: 75.5,0.01) { 99th percentile};
-\node[anchor = south east,yshift=-0.425em] at (axis cs: 100.5,0.0001) { 99.99th percentile};
-\node[anchor = south east,yshift=-0.425em] at (axis cs: 100.5,0.00001) { 99.999th percentile};
+\node[anchor = south east,yshift=-0.425em] at (axis cs: 100.5,0.00011) { 99.99th percentile};
+\node[anchor = south east,yshift=-0.425em] at (axis cs: 100.5,0.000011) { 99.999th percentile};
 \end{pgfonlayer}
 \end{axis}
 \end{tikzpicture}

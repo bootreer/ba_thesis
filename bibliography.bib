@@ -9,7 +9,6 @@
   volume          = 16,
   number          = 9,
   issn            = {2150-8097},
-  url             = {\url{https://doi.org/10.14778/3598581.3598584}},
   doi             = {10.14778/3598581.3598584},
   abstract        = {NVMe SSDs based on flash are cheap and offer high
                   throughput. Combining several of these devices into a single
@@ -36,7 +35,6 @@
   year            = 2022,
   isbn            = 9781450393805,
   publisher       = {Association for Computing Machinery},
-  url             = {\url{https://doi.org/10.1145/3534056.3534945}},
   doi             = {10.1145/3534056.3534945},
   abstract        = {Recent high-performance storage devices have exposed
                   software inefficiencies in existing storage stacks, leading to
@@ -80,7 +78,6 @@
   year = {2018},
   isbn = {9781450355858},
   publisher = {Association for Computing Machinery},
-  url = {https://doi.org/10.1145/3232755.3232767},
   doi = {10.1145/3232755.3232767},
   abstract = {The rise of user space packet processing frameworks like DPDK and netmap makes low-level code more accessible to developers and researchers. Previously, driver code was hidden in the kernel and rarely modified-or even looked at-by developers working at higher layers. These barriers are gone nowadays, yet developers still treat user space drivers as black-boxes magically accelerating applications. We want to change this: every researcher building network applications should understand the intricacies of the underlying drivers, especially if they impact performance. We present ixy, a user space network driver designed for simplicity and educational purposes. Ixy focuses on the bare essentials of user space packet processing: a packet forwarder including the whole NIC driver uses less than 1000 lines of C code.Our code is available as free and open source under the BSD license at https://github.com/emmericp/ixy.},
   booktitle = {Proceedings of the Applied Networking Research Workshop},
@@ -113,9 +110,16 @@
   series = {OSDI'18}
 }
 
+@inproceedings{haas2020exploiting,
+  title={Exploiting Directly-Attached NVMe Arrays in DBMS.},
+  author={Haas, Gabriel and Haubenschild, Michael and Leis, Viktor},
+  booktitle={CIDR},
+  year={2020}
+}
+
 @misc{mitre,
-  author = {The MITRE Corporation},
-  title= {2023 CWE Top 10 KEV Weaknesses},
+  author = {MITRE Corporation},
+  title={2023 CWE Top 10 KEV Weaknesses},
   year=2024,
   url = {https://cwe.mitre.org/top25/archive/2023/2023_kev_list.html},
   urldate = {2023-04-10}
@@ -126,6 +130,14 @@
   title= {Samsung V-NAND SSD 970 EVO Plus Data Sheet},
   year=2021,
   url = {https://download.semiconductor.samsung.com/resources/data-sheet/Samsung_NVMe_SSD_970_EVO_Plus_Data_Sheet_Rev.3.0_10129514059241.pdf},
+  urldate = {2023-04-10}
+}
+
+@misc{turbowrite,
+  author = {Samsung Electronis Co., Ltd.},
+  title= {Samsung Solid State Drive TurboWrite Technology},
+  year=2013,
+  url = {https://images-eu.ssl-images-amazon.com/images/I/914ckzwNMpS.pdf},
   urldate = {2023-04-10}
 }
 
@@ -147,6 +159,6 @@
 
 @misc{vroom,
   author={Tuomas Pirhonen},
-  title={vroom Git repository},
+  title={vroom Git Repository},
   url={https://github.com/bootreer/vroom}
 }
