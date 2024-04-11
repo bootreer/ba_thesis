@@ -2,17 +2,17 @@
 Writing device drivers is not anything new, as such we will go over the user space NVMe drivers implemented by SPDK, Redox and Redleaf, the latter two being also written in Rust like vroom. Additionally, we will look at what I/O APIs Linux has to offer for high throughput.
 
 \section{SPDK}
-Originally developed by Intel, the Storage Performance Development Kit (SPDK) provides a large set of tools libraries for high-performance storage applications, at the center of which is its NVMe driver. The driver itself is poll-based, zero-copy, and runs in user space. By eliminating interrupts and system calls entirely, SPDK achieves the highest performance out of all modern storage APIs\cite{storage_api}. However with its added complexity, it raises the question whether it's possible to write a user space, poll-based driver in Rust which achieves similar performance, while also maximising its simplicity.
+Originally developed by Intel, the Storage Performance Development Kit (SPDK) provides a large set of tools libraries for high-performance storage applications, at the center of which is its NVMe driver. The driver itself is poll-based, zero-copy, and runs in user space. By eliminating interrupts and system calls entirely, SPDK achieves the highest performance out of all modern storage APIs \cite{storage_api}. However with its added complexity, it raises the question whether it's possible to write a user space, poll-based driver in Rust which achieves similar performance, while also maximising its simplicity.
 
 \section{Redox}
-Redox is a Unix-like operating system written entirely in Rust, with the goal of being a ``robust, reliable and safe general-purpose operating system''\footnote{\url{https://redox-os.org/}}. Its development began in 2015 by Jeremy Soller and is still being actively worked on at the time of writing.
+Redox is a Unix-like operating system written entirely in Rust, with the goal of being a ``robust, reliable and safe general-purpose operating system'' \cite{redox}. Its development began in 2015 by Jeremy Soller and is still being actively worked on at the time of writing.
 
 Redox is based on a microkernel architecture, so many operating system functionalities, especially drivers, run in user space. Its design focuses on minimalism and modularity, with an emphasis on implementing as much of the operating system in user space as possible, leading to improved system stability and security. Currently, Redox's NVMe driver employs an interrupt-driven architecture, and supports asynchronous I/O to the NVMe device, using \texttt{Future}'s for interrupt handling.
 
 At the time of writing, there have been no performance evaluations of Redox's NVMe driver.
 
-\section{Redleaf}
-Like Redox, Redleaf is also a microkernel operating system written in Rust. Developed by the University of Utah's Mars Research Group in 2020, Redleaf's NVMe user space driver shares a similar structure to Redox's driver. From their benchmark results, they show that the Redleaf driver can achieve an I/O throughput within 1\% of and some cases even exceeding what SPDK achieves\cite{redleaf}. It is important to note that Redleaf's driver was only tested in its sequential reading and writing performance.
+\section{RedLeaf}
+Like Redox, RedLeaf \cite{redleaf-page} is also a microkernel operating system written in Rust. Developed by the University of Utah's Mars Research Group in 2020, RedLeaf's NVMe user space driver shares a similar structure to Redox's driver. From their benchmark results, they show that the RedLeaf driver can achieve an I/O throughput within 1\% of and some cases even exceeding what SPDK achieves \cite{redleaf}. It is important to note that Redleaf's driver was only tested in its sequential reading and writing performance.
 
 \section{Linux}
 Linux provides various APIs for handling I/O operations, the most prominent for asynchronous I/O being \texttt{libaio} and \texttt{io\_uring}, the latter is still being actively worked on and improved upon.
