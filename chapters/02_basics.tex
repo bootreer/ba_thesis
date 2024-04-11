@@ -3,16 +3,17 @@
 Before getting into the details of our driver, some concepts central to any NVMe driver need to be explained in detail first: how communicating with PCIe devices works with Memory-Mapped I/O and Direct Memory Access, the NVMe specification itself, and our programming language of choice, Rust.
 
 \section{PCI Express}
-Nowadays, all peripherals are connected to the computer over the Periphiral Component Interconnect Express (PCIe) interface. PCIe builds upon PCI and defines the specifications of how the computer and peripheral devices interact. These devices are identified by a domain number, bus number and function number. In Linux, the entire configuration space of a PCI device is exposed in the pseudo-filesystem \texttt{sysfs}. Accessing this configuration space is required to e.g. reset a device when binding to another device driver. How the configuration space is structured is depicted in \autoref{fig:pci-config}.
+Nowadays, all peripherals, whether it be SSDs, NICs or USB hubs, are connected to the computer via the Periphiral Component Interconnect Express (PCIe) interface. PCIe builds upon PCI and PCI-X defining the specifications of how the computer and peripheral devices interact.
 
-% while the contents of a PCI device's \texttt{sysfs} directory is shown in \autoref{lst:sysfs}
+These devices are connected via lanes over the PCIe bus, with transmit and receive channels. For higher throughput, the specification allows for devices with up to 32 lanes, each lane providing a raw bandwidth of \qty[per-mode=symbol]{32}{\giga\bit\per\second} as of PCIe Gen 5.0 \cite{pcie}. PCIe uses a TCP-like protocol for reliable data transmission with features like flow control, congestion avoidance and acknowledgements, with the use packets.
 
-\begin{figure}[H]
-  \centering
-    \includegraphics[width=\textwidth]{figures/pcie-config-space}
-    \caption{Structure of PCIe configuration space}
-    \label{fig:pci-config}
-\end{figure}
+
+% \begin{figure}[H]
+%   \centering
+%     \includegraphics[width=\textwidth]{figures/pcie-config-space}
+%     \caption{Structure of PCIe configuration space}
+%     \label{fig:pci-config}
+% \end{figure}
 
 % \begin{lstlisting}[float,label=lst:sysfs,caption={Example \texttt{sysfs} directory of a PCIe device with domain number 0000, bus number 17 and function 0}]
 % /sys/devices/pci0000:17
@@ -39,13 +40,14 @@ Nowadays, all peripherals are connected to the computer over the Periphiral Comp
 
 
 \section{Memory-Mapped I/O}
-Memory-mapped I/O (MMIO) is a method of performing I/O operations between the CPU and peripheral devices with a computer. Configuring and accessing PCIe devices usually requires accessing its Base Address Registers (BARs) and memory; on PCIe devices, these are accessed through MMIO. The subsystem \texttt{uio} in Linux exposes the BARs, as well as other required interfaces as files in the pseudo-filesystem \texttt{sysfs},
+Memory-mapped I/O (MMIO) is a method of performing I/O operations between the CPU and peripheral devices with a computer. Using MMIO, the memory and register of a PCIe device share the same address space as main memory, allowing these to be addressed the same way as main memory, i.e. using CPU instructions like \texttt{mov}. Historically, peripherals were accessed using port-mapped I/O with specific \texttt{in} and \texttt{out} instructions to access the device's I/O ports via an I/O bus or pins.
+
+The subsystem \texttt{uio} in Linux exposes the device's memory, Base Address Registers (BARs), as well as other required interfaces as files in the pseudo-filesystem \texttt{sysfs}.
 
 \section{Direct Memory Access}
-Passing data between hosts and PCIe devices typically is done through the use of ``Direct Memory Access''(DMA); this allows peripheral devices to initiate accesses to main memory independently of the CPU. Enabling DMA needs to be done explicitly by setting the ``Bus Master'' bit to 1 in the PCI configuration space.
+Passing data between hosts and PCIe devices typically is done through the use of ``Direct Memory Access''(DMA); this allows peripheral devices to initiate accesses to main memory independently of the CPU. I/O performance can be improved by not involving the CPU for expensive memory transfers, giving it headroom to perform other operations.
 
-
-Figuring out the physical address our memory mapped page is located at is done by examining the process page tables in the process' pagemap.
+Unlike on older hardware architectures, PCIe does not require a DMA contoller (third-party DMA), rather we can enable ``bus mastering'' (first-party DMA) for PCIe devices, i.e. a device can request control of the bus and perform read/write operations to memory or I/O space. Typically, DMA requires the use of physical addresses, as such bus masters are able to write to any address in main memory. The modern way of performing DMA is to use virtual addresses in conjunction with an input-output memory management unit (IOMMU). Using the IOMMU, DMA operations between a PCIe device and main memory are translated from bus addresses to virtual addresses, which then gets translated to a physical address \cite{spdk-dma}.
 
 
 \section{Non-Volatile Memory Express}
@@ -59,9 +61,9 @@ Non-Volatile Memory Express (NVMe) itself ``is an open collection of standards a
 
 The specification supports 1 Administrative submission and completion queue pair and up to 65535 I/O submission and completion queues, in theory allowing for high scalability and the ability to handle high volumes of I/O requests. Both the submission and completion queue operate as ring buffers, supporting up to 65536 entries and 65535 outstanding requests. Due to the command identifier being 16 bits in size, the NVMe controller in total supports up to 65536 outstanding requests at a time.
 
-Submission and Completion Queues operate similarly to a Consumer-Producer pattern, e.g. in the case of an SQ, the host produces requests and adds them to the queue for the NVMe device to consume. Here we keep track of a $\texttt{tail}$ pointer as the producer, pointing to the next free slot and a $\texttt{head}$ pointer, pointing to the next slot to be consumed.
+Submission and Completion Queues operate similarly to a Consumer-Producer pattern, e.g. in the case of an SQ, the host produces requests and adds them to the queue for the NVMe device to consume. For the SQ, we keep track of a \texttt{tail} pointer as the producer, pointing to the next free slot and a \texttt{head} pointer, pointing to the next slot to be consumed. For the CQ, we only keep track of the \texttt{head} pointer.
 
-Submitting requests to the NVMe device is done by constructing and then inserting a submission entry into the queue and updating the corresponding doorbell register to the new $\texttt{tail}$ value, notifying the NVMe device of the newly submitted request. Upon completion, the NVMe controller will post a completion entry into the Completion Queue belonging to the Submission Queue. The completion entries contain the command identifier, the status of the operation, and other command specific information. After processing the completion, the host then updates the doorbell register of the completion queue to signal that the completion entry has been acknowledged and processed. Depending on how the driver configures the NVMe controller, the device may send an interrupt signal upon completion. Each SQ and CQ has its own doorbell register.
+Submitting requests to the NVMe device is done by constructing and then inserting a submission entry into the queue and updating the corresponding doorbell register to the new \texttt{tail} value, notifying the NVMe device of the newly submitted request. Upon completion, the NVMe controller will post a completion entry into the Completion Queue belonging to the Submission Queue. The completion entries contain the command identifier, the status of the operation, and other command specific information. After processing the completion, the host then updates the doorbell register of the completion queue to the new value of \texttt{head} to signal that the completion entry has been acknowledged and processed. Depending on how the driver configures the NVMe controller, the device may send an interrupt signal upon completion.
 
 \begin{figure}
   \centering
@@ -73,14 +75,14 @@ Submitting requests to the NVMe device is done by constructing and then insertin
 
 For reading and writing, depending on the amount of data, different data pointers are passed to the command. The addresses passed to the data pointers are called Physical Region Page (PRP), which is nothing more than a pointer to a physical memory page. There exists another data structure for describing data buffers called Scatter Gather Lists (SGL), however these are not supported by all NVMe SSD's while PRPs are.
 
-For I/O operations less or equal to one page size (by default 4 KiB) we pass the physical address to Data pointer 1 (\texttt{d\_ptr[0]}). For requests up to two pages in size, we set \texttt{d\_ptr[0]} to the physical address and Data pointer 2 (\texttt{d\_ptr[1]}) to the address of the second block of data, e.g. \texttt{d\_ptr[0] + nvme\_page\_size} for contiguous memory. Once the I/O operation spans more than two pages, a pointer to a PRP list is passed to \texttt{d\_ptr[1]}. A PRP list is a list of PRP entries, where the last entry points to the next PRP list; essentially an array of pointers.
-
 \begin{figure}
   \centering
     \includegraphics[width=\textwidth]{figures/prp-list}
     \caption{Visualisation of the PRP lists in NVMe commands}
     \label{fig:prp-list}
 \end{figure}
+
+For I/O operations less or equal to one page size (by default 4 KiB) we pass the physical address to Data pointer 1 (\texttt{d\_ptr[0]}). For requests up to two pages in size, we set \texttt{d\_ptr[0]} to the physical address and Data pointer 2 (\texttt{d\_ptr[1]}) to the address of the second block of data, e.g. \texttt{d\_ptr[0] + nvme\_page\_size} for contiguous memory. Once the I/O operation spans more than two pages, a pointer to a PRP list is passed to \texttt{d\_ptr[1]}; this is depicted in \autoref{fig:prp-list}. A PRP list is a list of PRP entries, where the last entry points to the next PRP list; essentially an array of pointers.
 
 \section{Rust}
 Memory bugs remain amongst the most exploited vulnerabilities \cite{mitre}, and companies such as Google have begun to transition away from C and C++ towards the use of memory-safe languages, like Java, Rust or Go \cite{google}. Meanwhile, there exists an effort to integrate Rust into the Linux kernel spearheaded by the Rust for Linux project\footnote{\url{https://rust-for-linux.com/}}, with Linux adopting support for the programming language with release 6.1.
