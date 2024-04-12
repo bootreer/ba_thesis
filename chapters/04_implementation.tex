@@ -122,7 +122,7 @@ fn set_reg32(&self, reg: u32, value: u32) {
 
 After this, we request an I/O completion queue, followed by a request for an I/O submission queue, so the \texttt{NvmeDevice} can do I/O operations. Finally, we identify the namespaces, storing these in a \texttt{HashMap} in the \texttt{NvmeDevice}.
 
-\section{I/O operations}\label{subsection:io}
+\section{I/O Operations}\label{subsection:io}
 As all commands are processed through submission and completion queues, we have defined the structs \texttt{NvmeSubQueue}, and \texttt{NvmeCompQueue}, which store a \texttt{NvmeCommand} array, and \texttt{NvmeCompletion} array on a huge page, respectively. The submission entry being 64 bytes in size means that at most 1024 entries fit on a \qty{2}{\mebi\byte} huge page; for simplicity, we have not implemented queues which span over multiple pages. Thus the maximum number of outstanding submissions we currently support is 1023.
 
 The struct \texttt{NvmeDevice} is able to run as the driver itself, handling admin and I/O commands and also polling their completions, thus it exposes I/O operations with the methods \texttt{read()}, \texttt{write()}, \texttt{read\_copied()}, \texttt{write\_copied()}, as well as \texttt{read\_batched()} and \texttt{write\_batched()}. The initial two methods are zero-copy, taking a reference to a struct which implements the trait \texttt{DmaSlice} as the source buffer for writes and destination for reads, allowing us to iterate over the object in 8096 byte chunks. Currently we only iterate over 8096 bytes, as that is the maximum length we can pass to the NVMe command without the use of PRP lists. If we were to use PRP lists, each request would require constructing a PRP list on a DMA-able buffer.
