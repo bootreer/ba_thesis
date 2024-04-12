@@ -3,17 +3,18 @@
 Before getting into the details of our driver, some concepts central to any NVMe driver need to be explained in detail first: how communicating with PCIe devices works with Memory-Mapped I/O and Direct Memory Access, the NVMe specification itself, and our programming language of choice, Rust.
 
 \section{PCI Express}
-Nowadays, all peripherals, whether it be SSDs, NICs or USB hubs, are connected to the computer via the Periphiral Component Interconnect Express (PCIe) interface. PCIe builds upon PCI and PCI-X defining the specifications of how the computer and peripheral devices interact.
+Nowadays, all peripherals, from NVMe SSDs to USB hubs, are connected to the computer via the Periphiral Component Interconnect Express (PCIe) interface. PCIe builds upon PCI and PCI-X defining the specifications of how the computer and peripheral devices interact.
 
-These devices are connected via lanes over the PCIe bus, with transmit and receive channels. For higher throughput, the specification allows for devices with up to 32 lanes, each lane providing a raw bandwidth of \qty[per-mode=symbol]{32}{\giga\bit\per\second} as of PCIe Gen 5.0 \cite{pcie}. PCIe uses a TCP-like protocol for reliable data transmission with features like flow control, congestion avoidance and acknowledgements, with the use packets.
+These devices are connected via lanes over the PCIe bus, with transmit and receive channels. For higher throughput, the specification allows for devices with up to 32 lanes, each lane providing a raw bandwidth of \qty[per-mode=symbol]{32}{\giga\bit\per\second} as of PCIe Gen 5.0 \cite{pcie}. PCIe uses a TCP-like protocol for reliable data transmission with features like flow control, congestion avoidance and acknowledgements, with the use of packets.
 
+Configuring PCIe devices is done through accessing the PCI configuration space, depicted by \autoref{fig:pci-config}, a standardized register space containing information and memory addresses of the PCI(e) device. For instance, we can disable interrupts or enable direct memory access (DMA), we configure the ``Command Register'' accordingly.
 
-% \begin{figure}[H]
-%   \centering
-%     \includegraphics[width=\textwidth]{figures/pcie-config-space}
-%     \caption{Structure of PCIe configuration space}
-%     \label{fig:pci-config}
-% \end{figure}
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=\textwidth]{figures/pcie-config-space}
+    \caption{Structure of PCIe configuration space}
+    \label{fig:pci-config}
+\end{figure}
 
 % \begin{lstlisting}[float,label=lst:sysfs,caption={Example \texttt{sysfs} directory of a PCIe device with domain number 0000, bus number 17 and function 0}]
 % /sys/devices/pci0000:17
@@ -45,9 +46,11 @@ Memory-mapped I/O (MMIO) is a method of performing I/O operations between the CP
 The subsystem \texttt{uio} in Linux exposes the device's memory, Base Address Registers (BARs), as well as other required interfaces as files in the pseudo-filesystem \texttt{sysfs}.
 
 \section{Direct Memory Access}
-Passing data between hosts and PCIe devices typically is done through the use of ``Direct Memory Access''(DMA); this allows peripheral devices to initiate accesses to main memory independently of the CPU. I/O performance can be improved by not involving the CPU for expensive memory transfers, giving it headroom to perform other operations.
+Passing data between hosts and PCIe devices typically is done through the use of direct memory access(DMA); this allows peripheral devices to initiate accesses to main memory independently of the CPU. I/O performance can be improved by not involving the CPU for expensive memory transfers, giving it headroom to perform other operations.
 
-Unlike on older hardware architectures, PCIe does not require a DMA contoller (third-party DMA), rather we can enable ``bus mastering'' (first-party DMA) for PCIe devices, i.e. a device can request control of the bus and perform read/write operations to memory or I/O space. Typically, DMA requires the use of physical addresses, as such bus masters are able to write to any address in main memory. The modern way of performing DMA is to use virtual addresses in conjunction with an input-output memory management unit (IOMMU). Using the IOMMU, DMA operations between a PCIe device and main memory are translated from bus addresses to virtual addresses, which then gets translated to a physical address \cite{spdk-dma}.
+Unlike on older hardware architectures, PCIe does not require a DMA contoller (third-party DMA), rather we can enable ``bus mastering'' (first-party DMA) for PCIe devices, i.e. a device can request control of the bus and perform read/write operations to memory or I/O space.
+
+Typically, DMA requires the use of physical addresses, as such bus masters are able to write to any address in main memory. The modern way of performing DMA is to use virtual addresses in conjunction with an input-output memory management unit (IOMMU). Using the IOMMU, DMA operations between a PCIe device and main memory are translated from bus addresses to virtual addresses, which then gets translated to a physical address \cite{spdk-dma}. On Linux, the Virtual Function I/O (VFIO) driver framework enables the use of IOMMU intended for non-privileged, safe user space device drivers \cite{vfio}.
 
 
 \section{Non-Volatile Memory Express}

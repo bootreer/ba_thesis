@@ -33,7 +33,7 @@ All benchmarks are run on a system with an Intel Xeon E5-2660 with \qty{251}{\gi
     \label{tab:evoplus}
 \end{table}
 
-In the following sections we will compare our driver's performance with the datasheet numbers in \autoref{tab:evoplus}, as well as against other storage engines: \texttt{libaio}, \texttt{io\_uring}, SPDK and the Linux file I/O API \texttt{pread}/\texttt{pwrite} (\texttt{psync}). Each I/O engine is tested by running a read or write workload over 900 seconds, with I/O unit sizes of \qty{4}{\kibi\byte}.
+In the following sections we will compare our driver's performance with the datasheet numbers in \autoref{tab:evoplus}, as well as against other storage engines: \texttt{libaio}, \texttt{io\_uring}, SPDK and the Linux file I/O API \texttt{pread}/\texttt{pwrite} (\texttt{psync}). Each I/O engine is tested by running a read or write workload over 900 seconds, with I/O unit sizes of \qty{4}{\kibi\byte}. We tested random I/O as opposed to sequential I/O, as it is generally more difficult to achieve good random I/O performance.
 
 The NVMe controller is aware when a device is empty and thus processes read requests without actually performing any read operations. On an empty drive, the reported read performance will be much higher, hence all read tests are done on a full drive, i.e. each LBA has been written to at least once.
 
@@ -42,7 +42,7 @@ For writes, the SSD is cleared beforehand, such that it is in a comparable state
 
 We use the Flexible I/O tester \texttt{fio}\footnote{\url{https://github.com/axboe/fio}} to test the performance capabilities of \texttt{libaio}, \texttt{io\_uring} and \texttt{psync}, and in some cases SPDK. In \autoref{fig:iops-qd1}, \autoref{fig:iops-qd32} we use numbers from SPDK's own \texttt{spdk\_perf\_tool} tool, as their \texttt{fio} plugin introduces some overhead; for \autoref{fig:ccdf}, \autoref{fig:lat-qd1} we use log files \texttt{fio} creates.
 
-We use the \texttt{fio} configuration in \autoref{lst:fio_conf}. The same parameters were used when testing with \texttt{spdk\_perf\_tool}.
+We use the \texttt{fio} configuration in \autoref{lst:fio_conf}, with the Linux storage engines performing I/O to the NVMe as a block device. The same parameters were used when testing with \texttt{spdk\_perf\_tool}.
 
 \begin{lstlisting}[float, label=lst:fio_conf, caption=\texttt{fio} configuration]
   [global]
@@ -74,7 +74,7 @@ Observing the trend of the throughput over time in \autoref{fig:vroom-iops-time}
 
 To investigate the effects the number of threads and queue depth (QD) have on throughput, we performed multiple tests with different parameters on the read throughput rather than write to minimise variance.
 
-Observing how the number of threads impact the throughput in \autoref{fig:vroom-iops-thread}, we see the throughput double each time we double the number of threads until 16 threads, afterwards we see gains are smaller. With a queue depth of 32, we see an increase in throughput until 8 threads, after which the throughput plateaus at around 460 KIOPS. As our CPU has 40 threads, it is to be expected that we see no more performance gains by increasing the number of threads beyond 40.
+Observing how the number of threads impact the throughput in \autoref{fig:vroom-iops-thread}, we see the throughput double each time we double the number of threads until 16 threads, afterwards we see gains are smaller. With a queue depth of 32, we see an increase in throughput until 8 threads, after which the throughput plateaus at around 460 KIOPS. As our CPU has 40 hardware threads, we would expect diminishing returns or even regression by increasing the number of threads beyond 40.
 
 \begin{figure}[H]
   \centering

@@ -31,7 +31,7 @@
     width=\textwidth,
     yscale=1,
     grid=major,
-    xmin=0, xmax=200,
+    xmin=0, xmax=120,
     ylabel={Throughput [KIOPS]},
     ylabel style={align=center},
     xlabel={Time [s]},
@@ -55,7 +55,7 @@
   \legend{vroom, \texttt{io\_uring}, \texttt{libaio}, SPDK}
 
 \begin{pgfonlayer}{axis foreground}
-  \node[anchor = south east,yshift=-0.425em] at (axis cs: 150,570) { max. write };
+  \node[anchor = south east,yshift=-0.425em] at (axis cs: 100,570) { max. write };
   % \node[anchor = north east,yshift=-0.425em] at (axis cs: 300,670) { max. read };
 \end{pgfonlayer}
 \end{axis}
