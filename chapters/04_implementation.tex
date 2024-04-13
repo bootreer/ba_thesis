@@ -72,7 +72,7 @@ fn virt_to_phys(addr: usize) -> Result<usize, Error> {
 
 The pagemap contains one 64 bit value for each virtual page; our hugepage is in main memory, so the pagemap entry is structured as depicted \autoref{fig:pagemap}. Finding the relative index of the page is done by taking the virtual address of it and dividing it by the the page size, which we use to locate the corresponding pagemap entry. Constructing the physical address from the pagemap entry and virtual address is done by taking the Page Frame Number (Bits 0-54), multiplying that by the page size to get the physical address of the page, to which we add (\texttt{addr \% pagesize}), the offset within the physical page. For \qty{2}{\mebi\byte} pages this offset is 0. \autoref{lst:virt_phys} shows how this is done in Rust.
 
-The reason vroom needs to run as root is due to requiring \texttt{CAP\_SYS\_ADMIN} to read the Page Frame Numbers ever since the Rowhammer vulnerability exploit, i.e. from Linux 4.0 onwards.
+One of the reasons vroom needs to run as root is due to requiring \texttt{CAP\_SYS\_ADMIN} to read the Page Frame Numbers ever since the Rowhammer vulnerability exploit, i.e. from Linux 4.0 onwards.
 
 For DMA we define the struct \texttt{Dma<T>}, with which we can allocate a memory-mapped huge page, encapsulating its virtual address type \texttt{*T} and physical address. We also define the trait \texttt{DmaSlice} which allows us to iterate over chunks of the DMA memory, as well use a subsection of the memory via slicing. This trait is used for zero-copy I/O operations.
 

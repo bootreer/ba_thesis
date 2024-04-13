@@ -48,7 +48,7 @@ The subsystem \texttt{uio} in Linux exposes the device's memory, Base Address Re
 \section{Direct Memory Access}
 Passing data between hosts and PCIe devices typically is done through the use of direct memory access (DMA); this allows peripheral devices to initiate accesses to main memory independently of the CPU. I/O performance can be improved by not involving the CPU for expensive memory transfers, giving it headroom to perform other operations.
 
-Unlike on older hardware architectures, PCIe does not require a DMA contoller (third-party DMA), rather we can enable ``bus mastering'' (first-party DMA) for PCIe devices, i.e. a device can request control of the bus and perform read/write operations to memory or I/O space.
+Unlike on older hardware architectures, PCIe does not require a DMA contoller (third-party DMA), rather we can enable ``bus mastering'' (first-party DMA) for PCIe devices; this is required to allow the device to issue memory or I/O requests.
 
 Typically, DMA requires the use of physical addresses, as such bus masters are able to write to any address in main memory. The modern way of performing DMA is to use virtual addresses in conjunction with an input-output memory management unit (IOMMU). Using the IOMMU, DMA operations between a PCIe device and main memory are translated from bus addresses to virtual addresses, which then gets translated to a physical address \cite{spdk-dma}. On Linux, the Virtual Function I/O (VFIO) driver framework enables the use of IOMMU intended for non-privileged, safe user space device drivers \cite{vfio}.
 
