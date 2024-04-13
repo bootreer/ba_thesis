@@ -40,7 +40,7 @@ The NVMe controller is aware when a device is empty and thus processes read requ
 For writes, the SSD is cleared beforehand, such that it is in a comparable state for each test. Full NVMe SSDs report worsened write performances due to wear-levelling and write amplification, where the NVMe controller performs garbage collection and internally reorders data.
 
 
-We use the Flexible I/O tester \texttt{fio}\footnote{\url{https://github.com/axboe/fio}} to test the performance capabilities of \texttt{libaio}, \texttt{io\_uring} and \texttt{psync}, and in some cases SPDK. In \autoref{fig:iops-qd1}, \autoref{fig:iops-qd32} we use numbers from SPDK's own \texttt{spdk\_perf\_tool} tool, as their \texttt{fio} plugin introduces some overhead; for \autoref{fig:ccdf}, \autoref{fig:lat-qd1} we use log files \texttt{fio} creates.
+  We use the Flexible I/O tester \texttt{fio}\footnote{\url{https://github.com/axboe/fio}} to test the performance capabilities of \texttt{libaio}, \texttt{io\_uring} and \texttt{psync}, and in some cases SPDK. In \autoref{fig:iops-qd1}, \autoref{fig:iops-qd32} we use numbers from SPDK's own \texttt{spdk\_perf\_tool} tool, as their \texttt{fio} plugin introduces some overhead; for \autoref{fig:iops-time-all}, \autoref{fig:ccdf}, \autoref{fig:lat-qd1} we use log files \texttt{fio} creates.
 
 We use the \texttt{fio} configuration in \autoref{lst:fio_conf}, with the Linux storage engines performing I/O to the NVMe as a block device. The same parameters were used when testing with \texttt{spdk\_perf\_tool}.
 
@@ -84,7 +84,7 @@ Observing how the number of threads impacts the throughput in \autoref{fig:vroom
   \label{fig:vroom-iops-thread}
 \end{figure}
 
-When increasing the queue depth, we notice a similar growth where the IOPS doubles each time the queue depth doubles in size until QD16; at QD64, the throughput is higher than at 64 threads with QD1 by approximately \qty{80}{KIOPS}. By increasing queue depth, we achieve higher throughput than increasing the amount of threads when using a queue depth of 32. Here, we reach a plateau with a queue depth of 256 with a throughput of around \qty{480}{KIOPS}. With this Samsung SSD, there is no need to implement queues deeper than 256. Increasing queue depth leads to better performance than increasing the threads when comparing ``queue depths'', i.e. QD32T4 ($\approx$ QD128$=32 \cdot 4$)) has a lower throughput than QD128T1.
+When increasing the queue depth, we can notice a similar growth where the IOPS doubles each time the queue depth doubles in size until QD16 in autoref{fig:vroom-iops-qd}; at QD64, the throughput is higher than at 64 threads with QD1 by approximately \qty{80}{KIOPS}. By increasing queue depth, we achieve higher throughput than increasing the amount of threads when using a queue depth of 32. Here, we reach a plateau with a queue depth of 256 with a throughput of around \qty{480}{KIOPS}. With this Samsung SSD, there is no need to implement queues deeper than 256. Increasing queue depth leads to better performance than increasing the threads when comparing ``queue depths'', i.e. QD32T4 ($\approx$ QD128$=32 \cdot 4$)) has a lower throughput than QD128T1.
 
 \begin{figure}[H]
   \centering
@@ -141,7 +141,7 @@ As expected, the user space drivers achieve higher throughput numbers than the r
 
 \autoref{fig:lat-qd1} confirms our takeaways from the observations of \autoref{fig:ccdf}: we also see vroom and SPDK achieving nearly identical latency values. \texttt{io\_uring} and \texttt{psync} are, on average, slower by \qty{9}{\micro\second} and \qty{8}{\micro\second}, respectively, while \texttt{libaio} trails \texttt{io\_uring} by approximately \qty{13}{\micro\second} for reads and \qty{7}{\micro\second} for writes.
 
-\begin{figure}
+\begin{figure}[H]
   \centering
   \subcaptionbox {Random read} {\includegraphics[width=0.48\textwidth]{figures/latency-read-xbar} \label{fig:lat-read}}
   \subcaptionbox {Random write} {\includegraphics[width=0.48\textwidth]{figures/latency-write-xbar} \label{fig:lat-write}}
