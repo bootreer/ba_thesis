@@ -50,17 +50,18 @@
 %	tick label style={font=\fontsize{8}{9}\selectfont},
 %	label style={font=\fontsize{8}{9}\selectfont},
 	every axis legend/.append style={nodes={right}},
-  legend entries={\texttt{io\_uring}, \texttt{libaio}, \texttt{psync}, vroom, SPDK},
+  % legend entries={\texttt{io\_uring}, \texttt{libaio}, \texttt{psync}, vroom, SPDK},
+  legend entries={SPDK, vroom, \texttt{io\_uring}, \texttt{libaio}, \texttt{psync}},
 	legend pos = north east,
 	legend style={at={(0.99,0.99)}, anchor = north east},
 	legend columns = 1,
 ]
 % ,each nth point=100, filter discard warning=fals
+\addplot [mark=square*,color=TUMRed, thick,mark repeat*=110] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/spdk-write-cdf.csv};
+\addplot [mark=+,color=TUMOrange, thick,mark repeat*=200] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/vroom-write-cdf.csv};
 \addplot [mark=none,color=TUMBlack, thick] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/io-uring-write-cdf.csv};
 \addplot [mark=x,color=TUMDarkerBlue, thick,mark repeat*=110] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/libaio-write-cdf.csv};
 \addplot [mark=triangle*,color=TUMGreen, thick,mark repeat*=70] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/psync-write-cdf.csv};
-\addplot [mark=+,color=TUMOrange, thick,mark repeat*=200] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/vroom-write-cdf.csv};
-\addplot [mark=square*,color=TUMRed, thick,mark repeat*=110] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/spdk-write-cdf.csv};
 
 \addplot[mark=none,color=black!60,forget plot,dashed,thick] coordinates {
 (0,0.1)

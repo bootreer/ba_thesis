@@ -16,8 +16,8 @@
   % xscale=0.5,
   % bar width=0.5cm,
   % width=\textwidth,
-  symbolic y coords={psync,iou,libaio,spdk,vroom},
-  yticklabels={\texttt{psync}, \texttt{io\_uring}, \texttt{libaio}, SPDK, vroom},
+  symbolic y coords={psync,libaio,iou,vroom,spdk},
+  yticklabels={\texttt{psync}, \texttt{libaio}, \texttt{io\_uring}, vroom, SPDK},
   % xmin=0, xmax=4,
   % xtick={,test,ttest,teest}
   ytick=data,
@@ -41,26 +41,26 @@
 
 \addplot [color=TUMBlue, fill=TUMBlue, thick] coordinates {
   (15.42,psync)
-  (16.26,iou)
   (23.16,libaio)
-  (7.71,spdk)
+  (16.26,iou)
   (7.92,vroom)
+  (7.71,spdk)
   };
 
 \addplot [color=TUMGreen, fill=TUMGreen, thick] coordinates {
   (16.51,psync)
-  (17.87,iou)
   (26.14,libaio)
-  (10.39,spdk)
+  (17.87,iou)
   (8.16,vroom)
+  (10.39,spdk)
   };
 
 \addplot [color=TUMOrange, fill=TUMOrange, thick] coordinates {
   (33.91,psync)
-  (33.72,iou)
   (39.82,libaio)
-  (20.88,spdk)
+  (33.72,iou)
   (20.08,vroom)
+  (20.88,spdk)
   };
 
 % \addplot [color=TUMRed, fill=TUMRed, thick] coordinates {

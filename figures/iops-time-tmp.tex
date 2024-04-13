@@ -37,10 +37,10 @@
     xlabel={Time [s]},
     ]
 
+\addplot [mark=none,color=TUMRed, thick,smooth] table[col sep=comma, x=time, y expr=\thisrow{iops}/1000] {data/spdk-write-iops.csv};
 \addplot [mark=none,color=TUMOrange, thick, smooth] table[col sep=comma, x=time, y expr=\thisrow{iops}/1000] {data/vroom-write-iops.csv};
 \addplot [mark=none,color=TUMBlack, thick, smooth] table[col sep=comma, x=time, y expr=\thisrow{iops}/1000] {data/iouring-write-iops.csv};
 \addplot [mark=none,color=TUMBlue, thick,smooth] table[col sep=comma, x=time, y expr=\thisrow{iops}/1000] {data/libaio-write-iops.csv};
-\addplot [mark=none,color=TUMRed, thick,smooth] table[col sep=comma, x=time, y expr=\thisrow{iops}/1000] {data/spdk-write-iops.csv};
 % \addplot[mark=none, domain=0:900, smooth, variable=\x, color=TUMOrange, thick] plot ({\x}, {600});
 \addplot[mark=none,color=black!60,forget plot,dashed,thick] coordinates {
 (0,550)
@@ -52,7 +52,7 @@
 % (900,600)
 % };
 
-  \legend{vroom, \texttt{io\_uring}, \texttt{libaio}, SPDK}
+  \legend{SPDK, vroom, \texttt{io\_uring}, \texttt{libaio}}
 
 \begin{pgfonlayer}{axis foreground}
   \node[anchor = south east,yshift=-0.425em] at (axis cs: 100,570) { max. write };

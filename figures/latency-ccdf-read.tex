@@ -36,7 +36,8 @@
 	width=20.2cm,
 	height=6.4cm,
 	xmin=0, xmax=200,
-	ymin=0.000007, ymax=1,
+	% ymin=0.000007, ymax=1,
+	ymin=0.000004, ymax=1,
 	ymode=log,
 	% xmode=log,
 	grid=major,
@@ -50,16 +51,17 @@
 %	tick label style={font=\fontsize{8}{9}\selectfont},
 %	label style={font=\fontsize{8}{9}\selectfont},
 	every axis legend/.append style={nodes={right}},
-  legend entries={\texttt{io\_uring}, \texttt{libaio}, \texttt{psync}, vroom, SPDK},
+  % legend entries={\texttt{io\_uring}, \texttt{libaio}, \texttt{psync}, vroom, SPDK},
+  legend entries={SPDK, vroom, \texttt{io\_uring}, \texttt{libaio}, \texttt{psync}},
 	legend pos = north east,
 	legend style={at={(0.99,0.99)}, anchor = north east},
 	legend columns = 1,
 ]
+\addplot [mark=square*,color=TUMRed, thick,mark repeat*=250] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/spdk-read-cdf.csv};
+\addplot [mark=+,color=TUMOrange, thick,mark repeat*=70] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/vroom-read-cdf.csv};
 \addplot [mark=none,color=TUMBlack, thick] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/io-uring-read-cdf.csv};
 \addplot [mark=x,color=TUMDarkerBlue, thick,mark repeat*=120] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/libaio-read-cdf.csv};
 \addplot [mark=triangle*,color=TUMGreen, thick,mark repeat*=130] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/psync-read-cdf.csv};
-\addplot [mark=+,color=TUMOrange, thick,mark repeat*=70] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/vroom-read-cdf.csv};
-\addplot [mark=square*,color=TUMRed, thick,mark repeat*=250] table[col sep=comma,x=latency,y expr=1-\thisrow{cdf}] {data/spdk-read-cdf.csv};
 
 \addplot[mark=none,color=black!60,forget plot,dashed,thick] coordinates {
 (0,0.1)

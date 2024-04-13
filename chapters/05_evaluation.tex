@@ -33,7 +33,7 @@ All benchmarks are run on a system with an Intel Xeon E5-2660 with \qty{251}{\gi
     \label{tab:evoplus}
 \end{table}
 
-In the following sections we will compare our driver's performance with the datasheet numbers in \autoref{tab:evoplus}, as well as against other storage engines: \texttt{libaio}, \texttt{io\_uring}, SPDK and the Linux file I/O API \texttt{pread}/\texttt{pwrite} (\texttt{psync}). Each I/O engine is tested by running a read or write workload over 900 seconds, with I/O unit sizes of \qty{4}{\kibi\byte}. We tested random I/O as opposed to sequential I/O, as it is generally more difficult to achieve good random I/O performance.
+In the following sections we will compare our driver's performance with the datasheet numbers in \autoref{tab:evoplus}, as well as against other storage engines: \texttt{libaio}, \texttt{io\_uring}, SPDK and the Linux file I/O API \texttt{pread}/\texttt{pwrite} (\texttt{psync}). Each storage engine is tested by running a read or write workload over 900 seconds for single threaded I/O, and 60 seconds for multithreaded I/O, with I/O unit sizes of \qty{4}{\kibi\byte}. We tested random as opposed to sequential read/writes, as it is generally more difficult to achieve good random I/O performance.
 
 The NVMe controller is aware when a device is empty and thus processes read requests without actually performing any read operations. On an empty drive, the reported read performance will be much higher, hence all read tests are done on a full drive, i.e. each LBA has been written to at least once.
 
@@ -109,7 +109,7 @@ As Samsung has not specify the test parameters and environment used, it is likel
 \begin{figure}
   \centering
     \includegraphics[width=\textwidth]{figures/iops-qd32-ybar}
-    \caption{Random read (\qty{900}{\second}) and write (\qty{60}{\second}) throughput; Queue depth 32, 4 Threads}
+    \caption{Random read (\qty{60}{\second}) and write (\qty{60}{\second}) throughput; Queue depth 32, 4 Threads}
     \label{fig:iops-qd32}
 \end{figure}
 

@@ -38,21 +38,6 @@
   % enlarge x limits =0.2,
 ]
 
-\addplot [color=TUMGreen, fill=TUMGreen, thick] coordinates {
-  (read,12.7)
-  (write,60.8)
-  };
-
-\addplot [color=TUMDarkerBlue, fill=TUMDarkerBlue, thick] coordinates {
-  (read,10.4)
-  (write,39.2)
-  };
-
-\addplot [color=TUMBlack, fill=TUMBlack, thick] coordinates {
-  (read,12.5)
-  (write,57.7)
-  };
-
 \addplot [color=TUMRed, fill=TUMRed, thick] coordinates {
   (read,14.5)
   (write,128)
@@ -62,12 +47,30 @@
   (read,14.4)
   (write,126)
   };
+
+\addplot [color=TUMBlack, fill=TUMBlack, thick] coordinates {
+  (read,12.5)
+  (write,57.7)
+  };
+
+\addplot [color=TUMDarkerBlue, fill=TUMDarkerBlue, thick] coordinates {
+  (read,10.4)
+  (write,39.2)
+  };
+
+
+\addplot [color=TUMGreen, fill=TUMGreen, thick] coordinates {
+  (read,12.7)
+  (write,60.8)
+  };
+
 \addplot [color=TUMTurquois, fill=TUMTurquois, thick] coordinates {
   (read,19)
   (write,60)
   };
 
-\legend{\texttt{psync}, \texttt{libaio}, \texttt{io\_uring}, SPDK, vroom, Data sheet}
+
+  \legend{SPDK, vroom, \texttt{io\_uring}, \texttt{libaio},\texttt{psync}, Data sheet}
 \end{axis}
 \end{tikzpicture}
 \end{document}
