@@ -66,19 +66,18 @@ The specification supports 1 Administrative submission and completion queue pair
 
 Submission and completion queues operate similarly to a Consumer-Producer pattern, e.g. in the case of an SQ, the host produces requests and adds them to the queue for the NVMe device to consume. For the SQ, we keep track of a \texttt{tail} pointer as the producer, pointing to the next free slot and a \texttt{head} pointer, pointing to the next slot to be consumed. For the CQ, we only keep track of the \texttt{head} pointer.
 
-Submitting requests to the NVMe device is done by constructing and then inserting a submission entry into the queue and updating the corresponding doorbell register to the new \texttt{tail} value, notifying the NVMe device of the newly submitted request. Upon completion, the NVMe controller will post a completion entry into the completion queue belonging to the submission queue. The completion entries contain the command identifier, the status of the operation, and other command specific information. After processing the completion, the host then updates the doorbell register of the completion queue to the new value of \texttt{head} to signal that the completion entry has been acknowledged and processed. Depending on how the driver configures the NVMe controller, the device may send an interrupt signal upon completion.
-
-\begin{figure}
+\begin{figure}[]
   \centering
     \includegraphics[width=\textwidth]{figures/nvme-queue}
     \caption{Example queue and structure of the NVMe submission entry}
     \label{fig:nvme-queue}
 \end{figure}
 
+Submitting requests to the NVMe device is done by constructing and then inserting a submission entry into the queue and updating the corresponding doorbell register to the new \texttt{tail} value, notifying the NVMe device of the newly submitted request. Upon completion, the NVMe controller will post a completion entry into the completion queue belonging to the submission queue. The completion entries contain the command identifier, the status of the operation, and other command specific information. After processing the completion, the host then updates the doorbell register of the completion queue to the new value of \texttt{head} to signal that the completion entry has been acknowledged and processed. Depending on how the driver configures the NVMe controller, the device may send an interrupt signal upon completion.
 
 For reading and writing, depending on the amount of data, different data pointers are passed to the command. The addresses passed to the data pointers are called Physical Region Page (PRP), which is nothing more than a pointer to a physical memory page. There exists another data structure for describing data buffers called Scatter Gather Lists (SGL), however these are not supported by all NVMe SSD's while PRPs are.
 
-\begin{figure}
+\begin{figure}[]
   \centering
     \includegraphics[width=\textwidth]{figures/prp-list}
     \caption{Visualisation of the PRP lists in NVMe commands}

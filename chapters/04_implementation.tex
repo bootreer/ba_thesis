@@ -41,7 +41,7 @@ To enable the transfer of data between the host system and NVMe device we make u
 As PCIe devices access memory via physical addresses independently of the CPU, we require the buffers we use for DMA to stay in main memory. We can use \texttt{mlock(2)} to guarantee a memory page is locked in main memory, however the mapping is not static for \qty{4}{\kibi\byte} pages, the standard page size on Linux. Instead, we make use of \qty{2}{\mebi\byte} huge pages for this, where the physical addresses are pinned in Linux \cite{user_space_net}.
 Enabling the usage of huge pages on the operating system is done with the shell script \texttt{setup-hugetlbfs.sh} which creates a mount point for huge pages and writes a number of huge pages to \texttt{sysfs} files. Now we can allocate memory by creating the file in the newly mounted directory and then memory map the file with \texttt{mmap(2)} and lock it in memory with \texttt{mlock(2)} by using the appropriate bindings in the \texttt{libc} crate. We then derive the physical memory address of the page through \texttt{/proc/self/pagemap}.
 
-\begin{figure}
+\begin{figure}[H]
   \centering
     \includegraphics[width=\textwidth]{figures/pagemap}
     \caption{Fields of a pagemap entry when the page is present in main memory}
@@ -79,11 +79,7 @@ For DMA we define the struct \texttt{Dma<T>}, with which we can allocate a memor
 \section{Architecture}
 Our overall goal was to design a light-weight driver where external dependencies are kept to a minimum. As such, we only require the crates \texttt{libc} for bindings to C library functions, and \texttt{byteorder} for reading different sized integers and to avoid unnecessary unsafe code from working with raw bytes.
 
-The entry point to accessing an NVMe device on our driver is the \texttt{NvmeDevice} struct (\ref{lst:nvmedevice}). Like in Redox, we designed this struct to be able to handle all NVMe operations, i.e. Administrative and I/O capabilities, however as we haven't implemented \texttt{async}, we handle the request submission and completion polling from beginning to end, meaning requests currently operate synchronously.
-
-To enable multithreaded I/O processing, we have defined \texttt{NvmeQueuePair}, so, akin to SPDK, each thread can have its own queue pair to handle reading and writing, without needing locking access to a single instance of \texttt{NvmeDevice}. With the queue pair submissions and completions can be handled independently of another. Each queue pair encapsulates a unique identifier, a completion and submission queue. With unique identifiers, we guarantee each queue pair only writes to its corresponding doorbell registers, thus enabling lock-free multithreaded I/O to the NVMe device.
-
-\begin{lstlisting}[float, language=Rust,label=lst:nvmedevice,caption=NvmeDevice struct definition]
+\begin{lstlisting}[language=Rust,label=lst:nvmedevice,caption=NvmeDevice struct definition]
 pub struct NvmeDevice {
     pci_addr: String,
     addr: *mut u8, // BAR address
@@ -101,6 +97,10 @@ pub struct NvmeDevice {
 }
 \end{lstlisting}
 
+The entry point to accessing an NVMe device on our driver is the \texttt{NvmeDevice} struct (\autoref{lst:nvmedevice}). Like in Redox, we designed this struct to be able to handle all NVMe operations, i.e. Administrative and I/O capabilities, however as we haven't implemented \texttt{async}, we handle the request submission and completion polling from beginning to end, meaning requests currently operate synchronously.
+
+To enable multithreaded I/O processing, we have defined \texttt{NvmeQueuePair}, so, akin to SPDK, each thread can have its own queue pair to handle reading and writing, without needing locking access to a single instance of \texttt{NvmeDevice}. With the queue pair submissions and completions can be handled independently of another. Each queue pair encapsulates a unique identifier, a completion and submission queue. With unique identifiers, we guarantee each queue pair only writes to its corresponding doorbell registers, thus enabling lock-free multithreaded I/O to the NVMe device.
+
 \section{Driver Initialisation}
 In this section, we will go over the initialisation process of the driver, looking what happens within the function \texttt{init()} in \texttt{lib.rs} and the functions it calls; this function returns an instance of \texttt{NvmeDevice}, if nothing goes wrong. The struct is the driver for a single NVMe drive, and can handle admin and I/O requests.
 
@@ -108,10 +108,8 @@ Before any configuration and initialisation is done, we check if the PCIe device
 
 The BARs of the NVMe device is then mapped into main memory, as described in \autoref{section:MMIO}. We then follow the initialisation procedure described in the NVMe specification: first, we disable the controller by setting the \texttt{EN} (enable) bit to 0 in the \texttt{CC} (Controller Configuration) register. We wait for the \texttt{ready} bit in the \texttt{CSTS} register to be set to 0, after which we can configure the controller. Configuring the controller involves setting register values to those we require, for example the attributes of the Admin Queues, as well as command entries. All relevant offsets for the registers are stored in the enum \texttt{NvmeRegs32} and \texttt{NvmeRegs64}. After all the configuration is set, the controller is then re-enabled by setting the \texttt{EN} bit to 1. Now the NVMe controller is ready to process admin submissions.
 
-Although we use unsafe functions to access the BARs of the NVMe device, with an assertion guard, we can make sure that all accesses to the registers are not out of bound (see \autoref{lst:reg32}).
-
 % accessing register be like
-\begin{lstlisting}[float, language=Rust, label=lst:reg32,caption=Writing to a 32 bit register]
+\begin{lstlisting}[language=Rust, label=lst:reg32,caption=Writing to a 32 bit register]
 fn set_reg32(&self, reg: u32, value: u32) {
     assert!(reg as usize <= self.len - 4, "memory access out of bounds");
     unsafe {
@@ -121,6 +119,8 @@ fn set_reg32(&self, reg: u32, value: u32) {
     }
 }
 \end{lstlisting}
+
+Although we use unsafe functions to access the BARs of the NVMe device, with an assertion guard, we can make sure that all accesses to the registers are not out of bound (see \autoref{lst:reg32}).
 
 After this, we request an I/O completion queue, followed by a request for an I/O submission queue, so the \texttt{NvmeDevice} can do I/O operations. Finally, we identify the namespaces, storing these in a \texttt{HashMap} in the \texttt{NvmeDevice}.
 
