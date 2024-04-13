@@ -120,7 +120,7 @@ fn set_reg32(&self, reg: u32, value: u32) {
 }
 \end{lstlisting}
 
-Although we use unsafe functions to access the BARs of the NVMe device, with an assertion guard, we can make sure that all accesses to the registers are not out of bounds (see \autoref{lst:reg32}).
+Although we use unsafe functions to access the BARs of the NVMe device, with an assertion guard, we can make sure that all accesses to the registers are not out of bounds; shown by \autoref{lst:reg32} for writing to 32-bit registers.
 
 After this, we request an I/O completion queue, followed by a request for an I/O submission queue so the \texttt{NvmeDevice} can do I/O operations. Finally, we identify the namespaces, storing these in a \texttt{HashMap} in the \texttt{NvmeDevice}.
 
