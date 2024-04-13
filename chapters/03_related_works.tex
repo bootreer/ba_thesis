@@ -1,8 +1,8 @@
 \chapter{Related Work}\label{chapter:related}
-Writing device drivers is not anything new, as such we will go over the user space NVMe drivers implemented by SPDK, Redox and Redleaf, the latter two being also written in Rust like vroom. Additionally, we will look at what I/O APIs Linux has to offer for high throughput.
+Writing device drivers is not anything new, as such we will go over the user space NVMe drivers implemented by SPDK, Redox and Redleaf, the latter two also written in Rust like vroom. Additionally, we will look at what I/O APIs Linux has to offer for high throughput.
 
 \section{SPDK}
-Originally developed by Intel, the Storage Performance Development Kit (SPDK) provides a large set of tools libraries for high-performance storage applications, at the center of which is its NVMe driver. The driver itself is poll-based, zero-copy, and runs in user space. By eliminating interrupts and system calls entirely, SPDK achieves the highest performance out of all modern storage APIs \cite{storage_api}. However with its added complexity, it raises the question whether it's possible to write a user space, poll-based driver in Rust which achieves similar performance, while also maximising its simplicity.
+Originally developed by Intel, the Storage Performance Development Kit (SPDK) provides a large set of tools libraries for high-performance storage applications, at the center of which is its NVMe driver. The driver itself is poll-based, zero-copy, and runs in user space. By eliminating interrupts and system calls entirely, SPDK achieves the highest performance out of all modern storage APIs \cite{storage_api}. However with its added complexity, it raises the question whether it's possible to write a user space, poll-based driver in Rust which achieves similar performance, while also focusing on simplicity.
 
 \section{Redox}
 Redox is a Unix-like operating system written entirely in Rust, with the goal of being a ``robust, reliable and safe general-purpose operating system'' \cite{redox}. Its development began in 2015 by Jeremy Soller and is still being actively worked on at the time of writing.
