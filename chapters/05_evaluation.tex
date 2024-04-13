@@ -1,5 +1,5 @@
 \chapter{Evaluation}\label{chapter:eval}
-To evaluate whether vroom loses out on performance due to a simpler design and less optimisations we need to benchmark its performance. In this chapter we analyse vroom's performance, i.e. throughput and latency, while comparing it to other I/O engines.
+We need to benchmark its performance to evaluate whether vroom loses out on performance due to a more straightforward design and fewer optimisations. In this chapter, we analyse vroom's performance, i.e. throughput and latency, while comparing it to other I/O engines.
 
 \section{Setup}
 All benchmarks are run on a system with an Intel Xeon E5-2660 with \qty{251}{\gibi\byte} of RAM running Ubuntu 23.10 with a \qty{1}{\tera\byte} Samsung Evo 970 Plus NVMe SSD, which has a \qty{1}{\giga\byte} cache; the throughput and bandwidth limits of the SSD are noted in \autoref{tab:evoplus}.
@@ -33,11 +33,11 @@ All benchmarks are run on a system with an Intel Xeon E5-2660 with \qty{251}{\gi
     \label{tab:evoplus}
 \end{table}
 
-In the following sections we will compare our driver's performance with the datasheet numbers in \autoref{tab:evoplus}, as well as against other storage engines: \texttt{libaio}, \texttt{io\_uring}, SPDK and the Linux file I/O API \texttt{pread}/\texttt{pwrite} (\texttt{psync}). Each storage engine is tested by running a read or write workload over 900 seconds for single threaded I/O, and 60 seconds for multithreaded I/O, with I/O unit sizes of \qty{4}{\kibi\byte}. We tested random as opposed to sequential read/writes, as it is generally more difficult to achieve good random I/O performance.
+In the following sections we will compare our driver's performance with the datasheet numbers in \autoref{tab:evoplus}, as well as against other storage engines: \texttt{libaio}, \texttt{io\_uring}, SPDK and the Linux file I/O API \texttt{pread}/\texttt{pwrite} (\texttt{psync}). Each storage engine is tested by running a read or write workload over 900 seconds for single-threaded I/O and 60 seconds for multithreaded I/O, with I/O unit sizes of \qty{4}{\kibi\byte}. We tested random I/O instead of sequential I/O, as achieving good random read and write performance is generally more challenging.
 
-The NVMe controller is aware when a device is empty and thus processes read requests without actually performing any read operations. On an empty drive, the reported read performance will be much higher, hence all read tests are done on a full drive, i.e. each LBA has been written to at least once.
+The NVMe controller is aware when a device is empty and thus processes read requests without performing any read operations. On an empty drive, the reported read performance will be much higher. Hence, all read tests are done on a full drive, i.e. each LBA has been written to at least once.
 
-For writes, the SSD is cleared beforehand, such that it is in a comparable state for each test. Full NVMe SSDs report worsened write performances, due to mechanisms such as wear-levelling and write amplification, where the NVMe controller performs garbage collection and reorders data internally.
+For writes, the SSD is cleared beforehand, such that it is in a comparable state for each test. Full NVMe SSDs report worsened write performances due to wear-levelling and write amplification, where the NVMe controller performs garbage collection and internally reorders data.
 
 
 We use the Flexible I/O tester \texttt{fio}\footnote{\url{https://github.com/axboe/fio}} to test the performance capabilities of \texttt{libaio}, \texttt{io\_uring} and \texttt{psync}, and in some cases SPDK. In \autoref{fig:iops-qd1}, \autoref{fig:iops-qd32} we use numbers from SPDK's own \texttt{spdk\_perf\_tool} tool, as their \texttt{fio} plugin introduces some overhead; for \autoref{fig:ccdf}, \autoref{fig:lat-qd1} we use log files \texttt{fio} creates.
@@ -58,12 +58,12 @@ We use the \texttt{fio} configuration in \autoref{lst:fio_conf}, with the Linux 
   group_reporting=1
 \end{lstlisting}
 
-Our driver, vroom, is tested using our own time-based workload simulating the same workloads started by \texttt{fio}, performing read and writes to random block aligned LBAs.
+Our driver, vroom, is tested using our own time-based workload simulating the same workloads started by \texttt{fio}, performing reads and writes to random block-aligned LBAs.
 
 \section{Throughput}
-In this section, we will analyse the throughput capabilities of our NVMe driver, and how changing parameters affects the performance. Afterwards we will compare vroom's throughputs with those of the other I/O engines.
+In this section, we will analyse the throughput capabilities of our NVMe driver and how changing parameters affect performance. Afterwards, we will compare vroom's throughputs with those of the other I/O engines.
 
-Observing the trend of the throughput over time in \autoref{fig:vroom-iops-time}, we see the write throughput begin at a heightened rate, at around 800 thousand IOPS (KIOPS) and after approx. 40 seconds decreasing to approx. \qty{200}{KIOPS}. The SSD has a so-called ``TurboWrite'' buffer region of \qty{42}{\giga\byte}, which allows for faster writes by simulating a Single Level Cell NAND \cite{turbowrite}. This allows for lower write latencies, so heightened write throughputs, as long the buffer is not fully saturated. Samsung states in their data sheet that random writes after this have a throughput of \qty{300}{KIOPS} \cite{ssd-datasheet}. Averaged over 900 seconds, we achieve \qty{255}{KIOPS} when writing to an empty drive. On the other hand, read throughput stays relatively constant throughout the entire test, at around \qty{440}{KIOPS}, \qty{160}{KIOPS} below the datasheet value.
+Observing the throughput trend over time in \autoref{fig:vroom-iops-time}, we see the write throughput begin at a heightened rate, at around 800 thousand IOPS (KIOPS) and after approximately 40 seconds, decreasing to approximately \qty{200}{KIOPS}. The SSD has a so-called ``TurboWrite'' buffer region of \qty{42}{\giga\byte}, which allows for faster writes by simulating a Single Level Cell NAND \cite{turbowrite}. This allows for lower write latencies, so heightened write throughputs, as long the buffer is not fully saturated. Samsung states in their data sheet that random writes after this have a throughput of \qty{300}{KIOPS} \cite{ssd-datasheet}. Averaged over 900 seconds, we achieve \qty{255}{KIOPS} when writing to an empty drive. On the other hand, read throughput stays relatively constant throughout the entire test, at around \qty{440}{KIOPS}, \qty{160}{KIOPS} below the datasheet value.
 
 \begin{figure}[H]
   \centering
@@ -74,7 +74,7 @@ Observing the trend of the throughput over time in \autoref{fig:vroom-iops-time}
 
 To investigate the effects the number of threads and queue depth (QD) have on throughput, we performed multiple tests with different parameters on the read throughput rather than write to minimise variance.
 
-Observing how the number of threads impact the throughput in \autoref{fig:vroom-iops-thread}, we see the throughput double each time we double the number of threads until 16 threads, afterwards we see gains are smaller. With a queue depth of 32, we see an increase in throughput until 8 threads, after which the throughput plateaus at around 460 KIOPS. As our CPU has 40 hardware threads, we would expect diminishing returns or even regression by increasing the number of threads beyond 40.
+Observing how the number of threads impacts the throughput in \autoref{fig:vroom-iops-thread}, we see the throughput double each time we double the number of threads until 16 threads; afterwards, we see gains are more minor. With a queue depth of 32, we see an increase in throughput until 8 threads, after which the throughput plateaus at around 460 KIOPS. As our CPU has 40 hardware threads, we would expect diminishing returns or even regression by increasing the number of threads beyond 40.
 
 \begin{figure}[H]
   \centering
@@ -84,7 +84,7 @@ Observing how the number of threads impact the throughput in \autoref{fig:vroom-
   \label{fig:vroom-iops-thread}
 \end{figure}
 
-When increasing the queue depth, we notice a similar growth where the IOPS doubles each time the queue depth doubles in size until QD16, however at QD64 the throughput is higher than at 64 threads by approx. \qty{80}{KIOPS}. By increasing queue depth, we also achieve a higher throughput than when increasing threads with a queue depth of 32. Here we reach a plateau with a queue depth of 256 with a throughput of around \qty{480}{KIOPS}. With the Samsung SSD, there is no need to implement queues deeper than 256. Increasing queue depth leads to better performance than increasing the threads when comparing ``queue depths'', i.e. QD32T4 ($\approx$ QD128$=32 \cdot 4$)) has a lower throughput than QD128T1.
+When increasing the queue depth, we notice a similar growth where the IOPS doubles each time the queue depth doubles in size until QD16; at QD64, the throughput is higher than at 64 threads with QD1 by approximately \qty{80}{KIOPS}. By increasing queue depth, we achieve higher throughput than increasing the amoutn of threads when using a queue depth of 32. Here, we reach a plateau with a queue depth of 256 with a throughput of around \qty{480}{KIOPS}. With the Samsung SSD, there is no need to implement queues deeper than 256. Increasing queue depth leads to better performance than increasing the threads when comparing ``queue depths'', i.e. QD32T4 ($\approx$ QD128$=32 \cdot 4$)) has a lower throughput than QD128T1.
 
 \begin{figure}[H]
   \centering
@@ -103,7 +103,7 @@ When increasing the queue depth, we notice a similar growth where the IOPS doubl
 
 Comparing the throughput of I/O engines in terms of synchronous I/O, i.e. single-threaded with a queue depth of 1, we see the user space drivers performing above the kernel-based APIs. Looking at read throughput in \autoref{fig:iops-qd1}, none of the I/O engines come within 20\% of the maximum achievable throughput of the SSD, performing between \qty{10}{KIOPS} and \qty{15}{KIOPS}, with SPDK and vroom performing comparably at \qty{14.5}{KIOPS} and \qty{14.4}{KIOPS}, respectively. In terms of write performance, we see \texttt{psync} and \texttt{io\_uring} right around \qty{60}{KIOPS}, while \texttt{libaio} performs considerably below the limit of the SSD. Both SPDK and vroom achieve IOPS numbers doubling the limit stated by Samsung, at \qty{128}{KIOPS} and \qty{126}{KIOPS}, respectively.
 
-As Samsung has not specify the test parameters and environment used, it is likely they did not perform these read tests on a fully utilised drive and write test on an empty one. This means they would likely expect higher IOPS than what we observe, as the NVMe controller would not actually access the unwritten areas, increasing the overall IOPS number. While for writes the NVMe controller performs garbage collection when overwriting non-empty areas, introducing some overhead, and thus overall less IOPS.
+As Samsung has not specified the test parameters and environment used, likely they did not perform these read tests on a fully utilised drive or write tests on an empty one. This means they would likely expect higher IOPS than we observe for reads, as the NVMe controller would access unwritten areas, increasing the overall IOPS number. For writes, the NVMe controller performs garbage collection when overwriting non-empty areas, introducing some overhead and, thus, resulting in fewer IOPS overall.
 
 
 \begin{figure}
@@ -113,11 +113,11 @@ As Samsung has not specify the test parameters and environment used, it is likel
     \label{fig:iops-qd32}
 \end{figure}
 
-As NVMe SSDs are able to process a multitude of requests in parallel, we also analyse multi-threaded read and write performances, specifically we used 4 threads, each with a queue depth of 32, without explicitly batching requests. \texttt{psync}, as it only allows synchronous I/O, cannot be tested with these parameters.
+As NVMe SSDs are able to process a multitude of requests in parallel, we also analyse multithreaded read and write performances; specifically, we used 4 threads, each with a queue depth of 32, without explicitly batching requests. \texttt{psync}, as it only allows synchronous I/O, cannot be tested with these parameters.
 
-Like in the previous test, all storage engines perform quite closely in terms of read as we see in \autoref{fig:iops-time-all}, here all within 1\% of one another, with vroom being the most performant at \qty{444}{KIOPS}; however none coming close to the QD32T4 600 KIOPS limit in the datasheet. Interestingly, once we introduce deeper queues and multithreading, the system call overhead does not affect \texttt{libaio} and \texttt{io\_uring} to the same degree as for synchronous I/O when reading.
+Like in the previous test, all storage engines perform pretty closely in terms of read as we see in \autoref{fig:iops-time-all}, here all within 1\% of one another, with vroom being the most performant at \qty{444}{KIOPS}; however none come close to the QD32T4 600 KIOPS limit in the datasheet. Interestingly, once we introduce deeper queues and multithreading, the system call overhead does not affect \texttt{libaio} and \texttt{io\_uring} to the same degree as for synchronous I/O when reading.
 
-Over 900 seconds all I/O engines achieve similar throughputs on average. As we have already observed in \autoref{fig:vroom-iops-time}, the overall write throughput decreases immensely once the SSD's write buffer is saturated. Over longer write workloads, the performance disparities become negligible. Due to this, we look at the average write throughput over \qty{60}{\second} rather than \qty{900}{\second}. Averaged over \qty{60}{\second}, all I/O engines surpass the \qty{550}{KIOPS} ``ceiling'', with the user space drivers performing marginally better than the kernel bound storage engines. Like with \autoref{fig:iops-qd1}, \texttt{libaio} achieves the lowest throughput for writes.
+Over 900 seconds, all I/O engines achieve similar throughputs on average. As observed in \autoref{fig:vroom-iops-time}, the overall write throughput decreases immensely once the SSD's write buffer is saturated. Over longer write workloads, the performance disparities become negligible. Due to this, we look at the average write throughput over \qty{60}{\second} rather than \qty{900}{\second}. Averaged over \qty{60}{\second}, all I/O engines surpass the \qty{550}{KIOPS} ``ceiling'', with the user space drivers performing marginally better than the kernel bound storage engines. Similarly to \autoref{fig:iops-qd1}, \texttt{libaio} achieves the lowest throughput for writes.
 
 \begin{figure}
   \centering
@@ -126,7 +126,7 @@ Over 900 seconds all I/O engines achieve similar throughputs on average. As we h
     \label{fig:iops-time-all}
 \end{figure}
 
-When we look how the throughput changes over time in \autoref{fig:iops-time-all}, similar to the observation of \autoref{fig:iops-qd32} we see SPDK and vroom both clearly ahead in terms of peak throughput, achieving around \qty{800}{KIOPS}, while \texttt{io\_uring} and \texttt{libaio} have a throughput of approx. \qty{570}{KIOPS} and \qty{500}{KIOPS}, respectively. Here it is clear that once the ``TurboWrite'' buffer is fully saturated, the SSD becomes the bottleneck, where each I/O engine perform nearly identically with a throughput of around \qty{200}{KIOPS}. Also note that \autoref{fig:iops-time-all} uses IOPS logs from \texttt{fio}, so realistically the throughput of SPDK would likely be higher than vroom initially.
+When we look at how the throughput changes over time in \autoref{fig:iops-time-all}, similar to the observation of \autoref{fig:iops-qd32}, we see SPDK and vroom both ahead in terms of peak throughput, achieving around \qty{800}{KIOPS}, while \texttt{io\_uring} and \texttt{libaio} have a throughput of approximately \qty{570}{KIOPS} and \qty{500}{KIOPS}, respectively. Here, it is clear that once the ``TurboWrite'' buffer is fully saturated, the SSD becomes the bottleneck, where each I/O engine performs nearly identically with a throughput of around \qty{200}{KIOPS}. Also note that \autoref{fig:iops-time-all} uses IOPS logs from \texttt{fio}, so realistically, the throughput of SPDK would likely be higher than vroom initially.
 
 \section{Latency}
 \begin{figure}
@@ -137,9 +137,9 @@ When we look how the throughput changes over time in \autoref{fig:iops-time-all}
   \label{fig:ccdf}
 \end{figure}
 
-As expected, we see the user space drivers achieving higher throughput numbers than the rest. SPDK and our driver achieve IOPS numbers within 1\% of another, while being noticeably more performant than the Linux I/O APIs, especially when writing. This difference is caused by system calls and the consequent context switches. This is especially visible in \autoref{fig:ccdf}, where the tail distribution of the I/O latencies is plotted; here all I/O engines share a similar distribution, however offset by a certain amount. The system call overhead from \texttt{psync} and \texttt{io\_uring} introduces around \qty{10}{\micro\second} over SPDK and vroom, while \texttt{libaio} seemingly has some extra internal overhead adding an additional \qty{10}{\micro\second} to the latencies.
+As expected, the user space drivers achieve higher throughput numbers than the rest. SPDK and our driver achieve IOPS numbers within 1\% of one another while being noticeably more performant than the Linux I/O APIs, especially when writing. System calls, and the consequent context switches cause this difference. This is especially visible in \autoref{fig:ccdf}, where the tail distribution of the I/O latencies is plotted; here, all I/O engines share a similar distribution, however, offset by a certain amount. The system call overhead from \texttt{psync} and \texttt{io\_uring} introduces around \qty{10}{\micro\second} over SPDK and vroom, while \texttt{libaio} seemingly has some extra internal overhead adding in total \qty{20}{\micro\second} over vroom and SPDK.
 
-\autoref{fig:lat-qd1} confirms our takeaways from the observations of \autoref{fig:ccdf}: we also see vroom and SPDK achieving nearly identical latency values. \texttt{io\_uring} and \texttt{psync} are, on average, slower by \qty{9}{\micro\second} and \qty{8}{\micro\second}, respectively, while \texttt{libaio} trails \texttt{io\_uring} by approx. \qty{13}{\micro\second} for reads and \qty{7}{\micro\second} for writes.
+\autoref{fig:lat-qd1} confirms our takeaways from the observations of \autoref{fig:ccdf}: we also see vroom and SPDK achieving nearly identical latency values. \texttt{io\_uring} and \texttt{psync} are, on average, slower by \qty{9}{\micro\second} and \qty{8}{\micro\second}, respectively, while \texttt{libaio} trails \texttt{io\_uring} by approximately \qty{13}{\micro\second} for reads and \qty{7}{\micro\second} for writes.
 
 \begin{figure}
   \centering
