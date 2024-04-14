@@ -84,7 +84,7 @@ Observing how the number of threads impacts the throughput in \autoref{fig:vroom
   \label{fig:vroom-iops-thread}
 \end{figure}
 
-When increasing the queue depth, we can notice a similar growth where the IOPS doubles each time the queue depth doubles in size until QD16 in autoref{fig:vroom-iops-qd}; at QD64, the throughput is higher than at 64 threads with QD1 by approximately \qty{80}{KIOPS}. By increasing queue depth, we achieve higher throughput than increasing the amount of threads when using a queue depth of 32. Here, we reach a plateau with a queue depth of 256 with a throughput of around \qty{480}{KIOPS}. With this Samsung SSD, there is no need to implement queues deeper than 256. Increasing queue depth leads to better performance than increasing the threads when comparing ``queue depths'', i.e. QD32T4 ($\approx$ QD128$=32 \cdot 4$)) has a lower throughput than QD128T1.
+When increasing the queue depth, we can notice a similar growth where the IOPS doubles each time the queue depth doubles in size until QD16 in \autoref{fig:vroom-iops-qd}; at QD64, the throughput is higher than at 64 threads with QD1 by approximately \qty{80}{KIOPS}. By increasing queue depth, we achieve higher throughput than increasing the amount of threads when using a queue depth of 32. Here, we reach a plateau with a queue depth of 256 with a throughput of around \qty{480}{KIOPS}. With this Samsung SSD, there is no need to implement queues deeper than 256. Increasing queue depth leads to better performance than increasing the threads when comparing ``queue depths'', i.e. QD32T4 ($\approx$ QD128$=32 \cdot 4$)) has a lower throughput than QD128T1.
 
 \begin{figure}[H]
   \centering
